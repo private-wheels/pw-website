@@ -59,25 +59,25 @@ export interface Vehicle {
   images: string[];
   featured: boolean;
   status: ListingStatus;
+  /** Empty for the pre-launch demo listings, which have no real seller. */
   sellerId: string;
   sellerName: string;
   phone: string;
   createdAt: string;
 }
 
+/** What a seller submits from the listing wizard. */
 export type NewVehicleInput = Omit<
   Vehicle,
-  "id" | "sellerId" | "sellerName" | "phone" | "createdAt" | "status" | "featured" | "images"
-> & {
-  images?: string[];
-};
+  "id" | "sellerId" | "createdAt" | "status" | "featured" | "originalPrice"
+>;
 
+/** The signed-in user: Supabase Auth account + their `profiles` row. */
 export interface User {
   id: string;
   email: string;
-  password: string;
   name: string;
-  createdAt: string;
+  phone: string;
 }
 
 export interface FilterState {

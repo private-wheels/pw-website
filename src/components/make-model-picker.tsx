@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { Check, ChevronLeft, Search, X } from "lucide-react";
 import { useListings } from "@/hooks/use-listings";
-import { getMakeIndex } from "@/lib/data/seed-vehicles";
+import { getMakeIndex } from "@/lib/make-index";
 import type { MakeSelection } from "@/lib/make-model";
 import { PickerField } from "@/components/picker-field";
 import { cn } from "@/lib/utils";

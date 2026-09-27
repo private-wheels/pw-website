@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { LayoutDashboard, LogOut, Menu } from "lucide-react";
 import { useAuth } from "@/context/auth-context";
 import { BrandLogo } from "@/components/brand-mark";
@@ -24,7 +24,14 @@ const NAV_LINKS = [
 
 export function SiteHeader() {
   const pathname = usePathname();
-  const { user, logout } = useAuth();
+  const router = useRouter();
+  const { user, loading, logout } = useAuth();
+
+  async function handleSignOut() {
+    await logout();
+    router.push("/");
+    router.refresh();
+  }
 
   return (
     <header className="sticky top-0 z-40 border-b bg-card/95 backdrop-blur">
@@ -54,7 +61,10 @@ export function SiteHeader() {
         })}
       </nav>
 
-      <div className="hidden items-center gap-2 md:flex">
+      <div
+        className={cn("hidden items-center gap-2 md:flex", loading && "invisible")}
+        aria-hidden={loading}
+      >
         {user ? (
           <>
             <Button
@@ -67,7 +77,7 @@ export function SiteHeader() {
                 </Link>
               }
             />
-            <Button variant="outline" className="rounded-full" onClick={logout}>
+            <Button variant="outline" className="rounded-full" onClick={() => void handleSignOut()}>
               <LogOut className="h-4 w-4" />
               Sign Out
             </Button>
@@ -124,7 +134,7 @@ export function SiteHeader() {
                     className="rounded-full"
                     render={<Link href="/dashboard">Dashboard</Link>}
                   />
-                  <Button variant="outline" className="rounded-full" onClick={logout}>
+                  <Button variant="outline" className="rounded-full" onClick={() => void handleSignOut()}>
                     Sign Out
                   </Button>
                 </>

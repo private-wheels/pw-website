@@ -1,3 +1,9 @@
+/**
+ * Static demo catalogue — fixture data only. The live site reads listings from
+ * Supabase (see lib/data/listings.ts); these same vehicles were copied into the
+ * database as demo listings by supabase/migrations/*_seed_demo_listings.sql.
+ * Kept for design concept pages that render without a database.
+ */
 import type {
   AccidentHistory,
   BodyType,
@@ -236,31 +242,6 @@ export const VEHICLES: Vehicle[] = TEMPLATES.map((t, i) => {
     createdAt: daysAgoISO(t.listedDaysAgo ?? i * 2 + 1),
   };
 });
-
-export interface MakeIndexEntry {
-  make: string;
-  count: number;
-  models: { model: string; count: number }[];
-}
-
-/** Makes → their models, with listing counts, for the combined search picker. */
-export function getMakeIndex(vehicles: Vehicle[] = VEHICLES): MakeIndexEntry[] {
-  const byMake = new Map<string, Map<string, number>>();
-  for (const v of vehicles) {
-    if (!byMake.has(v.make)) byMake.set(v.make, new Map());
-    const models = byMake.get(v.make)!;
-    models.set(v.model, (models.get(v.model) ?? 0) + 1);
-  }
-  return [...byMake.entries()]
-    .map(([make, models]) => ({
-      make,
-      count: [...models.values()].reduce((a, b) => a + b, 0),
-      models: [...models.entries()]
-        .map(([model, count]) => ({ model, count }))
-        .sort((a, b) => a.model.localeCompare(b.model)),
-    }))
-    .sort((a, b) => a.make.localeCompare(b.make));
-}
 
 export function getFeaturedVehicles(limit = 9): Vehicle[] {
   return VEHICLES.filter((v) => v.featured).slice(0, limit);

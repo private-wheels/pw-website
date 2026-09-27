@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { PREVIEW_COOKIE_NAME, PREVIEW_COOKIE_OPTIONS } from "@/lib/preview-access";
+import { updateSession } from "@/lib/supabase/proxy";
 
 /**
  * Pre-launch gate.
@@ -18,14 +19,17 @@ import { PREVIEW_COOKIE_NAME, PREVIEW_COOKIE_OPTIONS } from "@/lib/preview-acces
  *   - opening any URL once with `?preview=<PREVIEW_TOKEN>`.
  * Either sets a cookie so you (and only you) can browse the real site for a
  * week.
+ *
+ * Every request that gets through to the real site also refreshes the
+ * Supabase session and guards /dashboard (see lib/supabase/proxy).
  */
 
 const COMING_SOON_PATH = "/coming-soon";
 const PREVIEW_PATH = "/preview";
 
-export function proxy(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   if (process.env.SITE_LAUNCHED === "true") {
-    return NextResponse.next();
+    return updateSession(request);
   }
 
   const { pathname, searchParams } = request.nextUrl;
@@ -38,14 +42,14 @@ export function proxy(request: NextRequest) {
 
   // `?preview=<token>` unlocks the real site and remembers it for a week.
   if (token && searchParams.get("preview") === token) {
-    const res = NextResponse.next();
+    const res = await updateSession(request);
     res.cookies.set(PREVIEW_COOKIE_NAME, token, PREVIEW_COOKIE_OPTIONS);
     return res;
   }
 
   // Someone who already unlocked preview sees the real site.
   if (token && request.cookies.get(PREVIEW_COOKIE_NAME)?.value === token) {
-    return NextResponse.next();
+    return updateSession(request);
   }
 
   // Everyone else: show the holding page, keep their URL.

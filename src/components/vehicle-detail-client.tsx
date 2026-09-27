@@ -12,6 +12,7 @@ import {
   ChevronRight,
   Fuel,
   Gauge,
+  Loader2,
   Mail,
   MapPin,
   Palette,
@@ -67,7 +68,7 @@ const SPEC_ROWS = (v: Vehicle) => [
 ];
 
 export function VehicleDetailClient({ id }: { id: string }) {
-  const { listing } = useListing(id);
+  const { listing, loading } = useListing(id);
   const { listings } = useListings();
   const [numberRevealed, setNumberRevealed] = useState(false);
   const [activeImage, setActiveImage] = useState(0);
@@ -89,6 +90,14 @@ export function VehicleDetailClient({ id }: { id: string }) {
     window.addEventListener("resize", updateThumbScrollState);
     return () => window.removeEventListener("resize", updateThumbScrollState);
   }, [id]);
+
+  if (loading) {
+    return (
+      <div className="flex min-h-[60vh] items-center justify-center">
+        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
 
   if (!listing) {
     return (

@@ -4,7 +4,8 @@ import { useState } from "react";
 import Link from "next/link";
 import { ArrowRight, MessageCircle, ShieldCheck, Tag } from "lucide-react";
 import { SiteContainer } from "@/components/site-container";
-import { VEHICLES } from "@/lib/data/seed-vehicles";
+import { useListings } from "@/hooks/use-listings";
+import { countSellers } from "@/lib/make-index";
 import { formatCurrency } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
@@ -41,12 +42,13 @@ const SELL_STEPS = [
  */
 export function WhyBuySellSection() {
   const [mode, setMode] = useState<"buy" | "sell">("buy");
+  const { listings } = useListings();
 
-  const totalValue = VEHICLES.reduce((sum, v) => sum + v.price, 0);
-  const sellerCount = new Set(VEHICLES.map((v) => v.sellerId)).size;
+  const totalValue = listings.reduce((sum, v) => sum + v.price, 0);
+  const sellerCount = countSellers(listings);
 
   const stats = [
-    { value: `${VEHICLES.length}`, label: "Cars listed" },
+    { value: `${listings.length}`, label: "Cars listed" },
     { value: `${sellerCount}+`, label: "Private sellers" },
     { value: formatCurrency(totalValue), label: "In listings" },
   ];

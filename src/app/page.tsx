@@ -7,21 +7,23 @@ import { ScrollRow } from "@/components/scroll-row";
 import { BudgetMatcher } from "@/components/budget-matcher";
 import { WhyBuySellSection } from "@/components/why-buy-sell-section";
 import { SiteContainer } from "@/components/site-container";
-import { VEHICLES, getLatestVehicles } from "@/lib/data/seed-vehicles";
+import { getActiveListings } from "@/lib/data/listings";
 import { BODY_TYPES } from "@/lib/data/constants";
 
-export default function HomePage() {
-  const latest = getLatestVehicles(10);
+export default async function HomePage() {
+  // Newest first (the query's order); cached, and shared with the root layout.
+  const listings = await getActiveListings();
+  const latest = listings.slice(0, 10);
 
   const styleCounts = BODY_TYPES.map((bt) => ({
     bodyType: bt,
-    count: VEHICLES.filter((v) => v.bodyType === bt).length,
+    count: listings.filter((v) => v.bodyType === bt).length,
   }))
     .filter((s) => s.count > 0)
     .sort((a, b) => b.count - a.count);
 
-  const makeCounts = [...new Set(VEHICLES.map((v) => v.make))]
-    .map((make) => ({ make, count: VEHICLES.filter((v) => v.make === make).length }))
+  const makeCounts = [...new Set(listings.map((v) => v.make))]
+    .map((make) => ({ make, count: listings.filter((v) => v.make === make).length }))
     .sort((a, b) => b.count - a.count)
     .slice(0, 12);
 
@@ -53,7 +55,7 @@ export default function HomePage() {
                 Buy your next car straight from the owner
               </h1>
               <p className="mx-auto mt-4 max-w-lg text-base leading-[1.5] text-white/85">
-                {VEHICLES.length} cars listed by verified private sellers — no dealer
+                {listings.length} cars listed by verified private sellers — no dealer
                 mark-ups, no middlemen, no pressure.
               </p>
 

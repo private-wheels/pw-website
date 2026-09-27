@@ -2,6 +2,7 @@
 
 import { use } from "react";
 import Link from "next/link";
+import { Loader2 } from "lucide-react";
 import { useAuth } from "@/context/auth-context";
 import { useListing } from "@/hooks/use-listings";
 import { ListingWizard } from "@/components/listing-wizard";
@@ -14,7 +15,15 @@ export default function EditListingPage({
 }) {
   const { id } = use(params);
   const { user } = useAuth();
-  const { listing } = useListing(id);
+  const { listing, loading } = useListing(id);
+
+  if (loading) {
+    return (
+      <div className="flex min-h-[60vh] items-center justify-center">
+        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
 
   if (!listing || listing.sellerId !== user?.id) {
     return (

@@ -2,12 +2,13 @@
 
 import Link from "next/link";
 import { toast } from "sonner";
-import { MoreVertical, Pause, Pencil, Play, Plus, Trash2 } from "lucide-react";
+import { Loader2, MoreVertical, Pause, Pencil, Play, Plus, Trash2 } from "lucide-react";
 import { useAuth } from "@/context/auth-context";
 import { useUserListings } from "@/hooks/use-listings";
-import { deleteListing, updateListing } from "@/lib/store/listings";
+import { deleteListing, setListingStatus } from "@/lib/store/listings";
+import type { Vehicle } from "@/lib/types";
 import { formatCurrency, formatMileage } from "@/lib/format";
-import { VehiclePlaceholder } from "@/components/vehicle-placeholder";
+import { VehicleMedia } from "@/components/vehicle-media";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -26,21 +27,35 @@ const STATUS_STYLES: Record<string, string> = {
 
 export default function DashboardPage() {
   const { user } = useAuth();
-  const { listings } = useUserListings(user?.id);
+  const { listings, loading, error, reload } = useUserListings(user?.id);
 
   const activeCount = listings.filter((l) => l.status === "active").length;
   const totalValue = listings
     .filter((l) => l.status === "active")
     .reduce((sum, l) => sum + l.price, 0);
 
-  function handleToggleStatus(id: string, status: string) {
-    updateListing(id, { status: status === "active" ? "paused" : "active" });
-    toast.success(status === "active" ? "Listing paused." : "Listing reactivated.");
+  async function handleToggleStatus(listing: Vehicle) {
+    const pausing = listing.status === "active";
+    try {
+      await setListingStatus(listing.id, pausing ? "paused" : "active");
+      await reload();
+      toast.success(pausing ? "Listing paused." : "Listing reactivated.");
+    } catch {
+      toast.error("Couldn't update the listing. Please try again.");
+    }
   }
 
-  function handleDelete(id: string) {
-    deleteListing(id);
-    toast.success("Listing deleted.");
+  async function handleDelete(listing: Vehicle) {
+    if (!window.confirm(`Delete your ${listing.year} ${listing.make} ${listing.model} listing? This can't be undone.`)) {
+      return;
+    }
+    try {
+      await deleteListing(listing);
+      await reload();
+      toast.success("Listing deleted.");
+    } catch {
+      toast.error("Couldn't delete the listing. Please try again.");
+    }
   }
 
   return (
@@ -82,7 +97,18 @@ export default function DashboardPage() {
 
       <h2 className="mt-10 text-lg font-semibold">Your Listings</h2>
 
-      {listings.length === 0 ? (
+      {loading ? (
+        <div className="mt-4 flex justify-center py-16">
+          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+        </div>
+      ) : error ? (
+        <div className="mt-4 flex flex-col items-center gap-3 rounded-xl border border-dashed py-16 text-center">
+          <p className="font-semibold">We couldn&apos;t load your listings</p>
+          <Button variant="outline" className="rounded-full" onClick={() => void reload()}>
+            Try again
+          </Button>
+        </div>
+      ) : listings.length === 0 ? (
         <div className="mt-4 flex flex-col items-center gap-3 rounded-xl border border-dashed py-16 text-center">
           <p className="font-semibold">You haven&apos;t listed a vehicle yet</p>
           <p className="max-w-sm text-sm text-muted-foreground">
@@ -105,8 +131,8 @@ export default function DashboardPage() {
               key={listing.id}
               className="flex flex-col gap-4 rounded-2xl border bg-card p-4 sm:flex-row sm:items-center"
             >
-              <div className="h-20 w-28 shrink-0 overflow-hidden rounded-lg">
-                <VehiclePlaceholder seed={listing.id} />
+              <div className="relative h-20 w-28 shrink-0 overflow-hidden rounded-lg">
+                <VehicleMedia vehicle={listing} sizes="112px" compact />
               </div>
 
               <div className="flex-1">
@@ -144,7 +170,7 @@ export default function DashboardPage() {
                     }
                   />
                   <DropdownMenuContent align="end">
-                    <DropdownMenuItem onClick={() => handleToggleStatus(listing.id, listing.status)}>
+                    <DropdownMenuItem onClick={() => void handleToggleStatus(listing)}>
                       {listing.status === "active" ? (
                         <>
                           <Pause className="h-4 w-4" /> Pause Listing
@@ -157,7 +183,7 @@ export default function DashboardPage() {
                     </DropdownMenuItem>
                     <DropdownMenuItem
                       variant="destructive"
-                      onClick={() => handleDelete(listing.id)}
+                      onClick={() => void handleDelete(listing)}
                     >
                       <Trash2 className="h-4 w-4" /> Delete Listing
                     </DropdownMenuItem>

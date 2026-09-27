@@ -1,6 +1,9 @@
+"use client";
+
 import type { ReactNode } from "react";
 import Link from "next/link";
-import { VEHICLES } from "@/lib/data/seed-vehicles";
+import { useListings } from "@/hooks/use-listings";
+import { countSellers } from "@/lib/make-index";
 import { BrandLogo } from "@/components/brand-mark";
 
 export function AuthSplitLayout({
@@ -14,7 +17,8 @@ export function AuthSplitLayout({
   children: ReactNode;
   footer: ReactNode;
 }) {
-  const sellerCount = new Set(VEHICLES.map((v) => v.sellerId)).size;
+  const { listings } = useListings();
+  const sellerCount = countSellers(listings);
 
   return (
     <div className="grid min-h-[calc(100vh-5rem)] grid-cols-1 lg:grid-cols-2">
@@ -33,7 +37,7 @@ export function AuthSplitLayout({
 
           <div className="mt-8 flex gap-8">
             <div>
-              <p className="text-2xl font-semibold tracking-tight">{VEHICLES.length}+</p>
+              <p className="text-2xl font-semibold tracking-tight">{listings.length}+</p>
               <p className="text-xs text-muted-foreground uppercase">Vehicles</p>
             </div>
             <div>

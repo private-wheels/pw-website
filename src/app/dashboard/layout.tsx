@@ -1,32 +1,24 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect } from "react";
+import { usePathname, useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import { useAuth } from "@/context/auth-context";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
   const router = useRouter();
-  const [hasHydrated, setHasHydrated] = useState(false);
+  const pathname = usePathname();
 
+  // The proxy already redirects signed-out visitors; this covers signing out
+  // (or the session expiring) while on a dashboard page.
   useEffect(() => {
-    // One-time hydration flag: `user` comes from a localStorage-backed
-    // external store, so on a hard navigation its first resolved value
-    // lags a render behind the server-rendered null. Gating the redirect
-    // on this avoids bouncing a logged-in user to /login before their
-    // session has had a chance to resolve.
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setHasHydrated(true);
-  }, []);
-
-  useEffect(() => {
-    if (hasHydrated && !user) {
-      router.replace("/login");
+    if (!loading && !user) {
+      router.replace(`/login?next=${encodeURIComponent(pathname)}`);
     }
-  }, [hasHydrated, user, router]);
+  }, [loading, user, router, pathname]);
 
-  if (!hasHydrated || !user) {
+  if (loading || !user) {
     return (
       <div className="flex min-h-[60vh] items-center justify-center">
         <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />

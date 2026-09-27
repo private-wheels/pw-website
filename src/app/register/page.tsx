@@ -3,13 +3,16 @@
 import { useState, type FormEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { UserPlus } from "lucide-react";
+import { MailCheck, UserPlus } from "lucide-react";
 import { useAuth } from "@/context/auth-context";
 import { AuthError } from "@/lib/store/auth";
 import { AuthSplitLayout } from "@/components/auth-split-layout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+
+/** Where new sellers land once signed in: the listing wizard, with a welcome note. */
+const WELCOME_PATH = "/dashboard/listings/new?welcome=1";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -19,8 +22,9 @@ export default function RegisterPage() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [confirmationSentTo, setConfirmationSentTo] = useState<string | null>(null);
 
-  function handleSubmit(e: FormEvent) {
+  async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     setError(null);
 
@@ -35,13 +39,47 @@ export default function RegisterPage() {
 
     setSubmitting(true);
     try {
-      register(email, password);
-      router.push("/dashboard/listings/new?welcome=1");
+      const { needsConfirmation } = await register(email, password, WELCOME_PATH);
+      if (needsConfirmation) {
+        setConfirmationSentTo(email.trim());
+        setSubmitting(false);
+        return;
+      }
+      router.push(WELCOME_PATH);
+      router.refresh();
     } catch (err) {
       setError(err instanceof AuthError ? err.message : "Something went wrong. Please try again.");
-    } finally {
       setSubmitting(false);
     }
+  }
+
+  if (confirmationSentTo) {
+    return (
+      <AuthSplitLayout
+        title="Check your inbox"
+        subtitle="One more step to activate your account"
+        footer={
+          <>
+            Already confirmed?{" "}
+            <Link href="/login" className="font-semibold text-primary hover:underline">
+              Sign in
+            </Link>
+          </>
+        }
+      >
+        <div className="flex flex-col items-center gap-3 text-center">
+          <MailCheck className="h-10 w-10 text-primary" strokeWidth={1.5} />
+          <p className="text-sm">
+            We&apos;ve sent a confirmation link to{" "}
+            <span className="font-semibold">{confirmationSentTo}</span>. Click it to activate
+            your account and list your first car.
+          </p>
+          <p className="text-xs text-muted-foreground">
+            Can&apos;t find it? Check your spam folder.
+          </p>
+        </div>
+      </AuthSplitLayout>
+    );
   }
 
   return (

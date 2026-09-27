@@ -1,124 +1,84 @@
-import type { NewVehicleInput, User, Vehicle } from "@/lib/types";
-import { VEHICLES } from "@/lib/data/seed-vehicles";
+import type { ListingStatus, NewVehicleInput, Vehicle } from "@/lib/types";
+import { refreshListings } from "@/app/actions/listings";
+import { rowToVehicle, vehicleInputToRow } from "@/lib/listings";
+import { deleteListingPhotos } from "@/lib/storage";
+import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 
 /**
- * Mock listings store. User-created listings persist to localStorage and are
- * merged with the seed catalogue everywhere listings are read, so the buy
- * flow, the seller dashboard, and the VDP all stay in sync. Like
- * `store/auth.ts`, this is the seam that gets reimplemented against Supabase
- * (Postgres + storage) later — pages should only ever call these functions.
- *
- * Exposes a tiny pub/sub (subscribeListings) so `useSyncExternalStore` can
- * read this store directly and re-render automatically after a mutation —
- * no manual refresh() calls needed at the call site. Reads are cached by a
- * version counter so repeated calls return referentially stable arrays
- * between mutations, which `useSyncExternalStore` requires.
+ * Seller-side listing reads and writes, run in the browser as the signed-in
+ * user. Row Level Security decides what each call may touch (sellers only
+ * ever see or change their own rows), and every write expires the cached
+ * public listings so the change shows up across the site immediately.
  */
 
-const LISTINGS_KEY = "pw_user_listings";
+export class ListingError extends Error {}
 
-function isBrowser() {
-  return typeof window !== "undefined";
+/** Every listing the user owns, including paused and sold ones. */
+export async function fetchListingsByUser(userId: string): Promise<Vehicle[]> {
+  const { data, error } = await getSupabaseBrowserClient()
+    .from("listings")
+    .select("*")
+    .eq("seller_id", userId)
+    .order("created_at", { ascending: false });
+
+  if (error) throw new ListingError(error.message);
+  return data.map(rowToVehicle);
 }
 
-function readUserListings(): Vehicle[] {
-  if (!isBrowser()) return [];
-  try {
-    const raw = window.localStorage.getItem(LISTINGS_KEY);
-    return raw ? (JSON.parse(raw) as Vehicle[]) : [];
-  } catch {
-    return [];
-  }
+/** A listing by id — active ones for anyone, plus the user's own in any status. */
+export async function fetchListing(id: string): Promise<Vehicle | null> {
+  const { data, error } = await getSupabaseBrowserClient()
+    .from("listings")
+    .select("*")
+    .eq("id", id)
+    .maybeSingle();
+
+  if (error) throw new ListingError(error.message);
+  return data ? rowToVehicle(data) : null;
 }
 
-function writeUserListings(listings: Vehicle[]) {
-  if (!isBrowser()) return;
-  window.localStorage.setItem(LISTINGS_KEY, JSON.stringify(listings));
+export async function createListing(input: NewVehicleInput): Promise<Vehicle> {
+  const { data, error } = await getSupabaseBrowserClient()
+    .from("listings")
+    .insert(vehicleInputToRow(input))
+    .select()
+    .single();
+
+  if (error) throw new ListingError(error.message);
+  await refreshListings();
+  return rowToVehicle(data);
 }
 
-type Listener = () => void;
-const listeners = new Set<Listener>();
-let version = 0;
+export async function updateListing(id: string, input: NewVehicleInput): Promise<Vehicle> {
+  const { data, error } = await getSupabaseBrowserClient()
+    .from("listings")
+    .update(vehicleInputToRow(input))
+    .eq("id", id)
+    .select()
+    .single();
 
-function notify() {
-  version += 1;
-  listeners.forEach((listener) => listener());
+  if (error) throw new ListingError(error.message);
+  await refreshListings();
+  return rowToVehicle(data);
 }
 
-export function subscribeListings(listener: Listener): () => void {
-  listeners.add(listener);
-  return () => listeners.delete(listener);
+export async function setListingStatus(id: string, status: ListingStatus): Promise<void> {
+  const { error } = await getSupabaseBrowserClient()
+    .from("listings")
+    .update({ status })
+    .eq("id", id);
+
+  if (error) throw new ListingError(error.message);
+  await refreshListings();
 }
 
-let mergedVersion = -1;
-let mergedCache: Vehicle[] = [];
+export async function deleteListing(listing: Vehicle): Promise<void> {
+  const { error } = await getSupabaseBrowserClient()
+    .from("listings")
+    .delete()
+    .eq("id", listing.id);
 
-function getMerged(): Vehicle[] {
-  if (mergedVersion !== version) {
-    mergedCache = [...readUserListings(), ...VEHICLES];
-    mergedVersion = version;
-  }
-  return mergedCache;
-}
-
-let activeVersion = -1;
-let activeCache: Vehicle[] = [];
-
-export function getAllListings(): Vehicle[] {
-  const merged = getMerged();
-  if (activeVersion !== version) {
-    activeCache = merged.filter((v) => v.status === "active");
-    activeVersion = version;
-  }
-  return activeCache;
-}
-
-export function getListingById(id: string): Vehicle | undefined {
-  return getMerged().find((v) => v.id === id);
-}
-
-const byUserCache = new Map<string, { version: number; data: Vehicle[] }>();
-
-export function getListingsByUser(userId: string): Vehicle[] {
-  const cached = byUserCache.get(userId);
-  if (cached && cached.version === version) return cached.data;
-
-  const data = getMerged().filter((v) => v.sellerId === userId);
-  byUserCache.set(userId, { version, data });
-  return data;
-}
-
-export function createListing(input: NewVehicleInput, user: User): Vehicle {
-  const listing: Vehicle = {
-    ...input,
-    id: `listing-${Date.now()}-${Math.floor(Math.random() * 10000)}`,
-    images: input.images ?? [],
-    featured: false,
-    status: "active",
-    sellerId: user.id,
-    sellerName: user.name,
-    phone: "Not provided",
-    createdAt: new Date().toISOString(),
-  };
-
-  writeUserListings([listing, ...readUserListings()]);
-  notify();
-  return listing;
-}
-
-export function updateListing(id: string, updates: Partial<Vehicle>): Vehicle | undefined {
-  const listings = readUserListings();
-  const index = listings.findIndex((v) => v.id === id);
-  if (index === -1) return undefined;
-
-  const updated = { ...listings[index], ...updates };
-  listings[index] = updated;
-  writeUserListings(listings);
-  notify();
-  return updated;
-}
-
-export function deleteListing(id: string): void {
-  writeUserListings(readUserListings().filter((v) => v.id !== id));
-  notify();
+  if (error) throw new ListingError(error.message);
+  await deleteListingPhotos(listing.images);
+  await refreshListings();
 }

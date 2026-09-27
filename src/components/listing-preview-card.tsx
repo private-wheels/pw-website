@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { Check, Fuel, Gauge, MapPin, Settings2 } from "lucide-react";
 import type { FormState } from "@/components/listing-wizard";
 import { BrandIcon } from "@/components/brand-mark";
@@ -28,7 +29,8 @@ export function ListingPreviewCard({ form }: { form: FormState }) {
     form.colour ||
     form.price ||
     form.description ||
-    form.features.length > 0;
+    form.features.length > 0 ||
+    form.images.length > 0;
 
   if (!hasAnything) {
     return (
@@ -52,7 +54,17 @@ export function ListingPreviewCard({ form }: { form: FormState }) {
   return (
     <div className="shadow-capsule overflow-hidden rounded-xl border bg-card">
       <div className="relative aspect-[16/10]">
-        <VehiclePlaceholder seed={`${form.make}-${form.model}` || "preview"} />
+        {form.images[0] ? (
+          <Image
+            src={form.images[0]}
+            alt="Cover photo"
+            fill
+            sizes="320px"
+            className="object-cover"
+          />
+        ) : (
+          <VehiclePlaceholder seed={`${form.make}-${form.model}` || "preview"} />
+        )}
         {form.condition && (
           <span className="shadow-pill absolute top-2.5 left-2.5 rounded-full bg-card px-2.5 py-1 text-[10.5px] font-bold">
             {form.condition}

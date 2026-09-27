@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { VEHICLES } from "@/lib/data/seed-vehicles";
+import { getActiveListing } from "@/lib/data/listings";
 import { formatCurrency, formatMileage } from "@/lib/format";
 import { VehicleDetailClient } from "@/components/vehicle-detail-client";
 
@@ -9,7 +9,7 @@ export async function generateMetadata({
   params: Promise<{ id: string }>;
 }): Promise<Metadata> {
   const { id } = await params;
-  const v = VEHICLES.find((x) => x.id === id);
+  const v = await getActiveListing(id);
 
   if (!v) {
     return { title: "Vehicle not found | Private Wheels" };

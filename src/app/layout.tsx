@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/context/auth-context";
+import { ListingsProvider } from "@/context/listings-context";
+import { getActiveListings } from "@/lib/data/listings";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { Toaster } from "@/components/ui/sonner";
@@ -25,7 +27,9 @@ export const metadata: Metadata = {
     "South Africa's trusted private vehicle marketplace. Browse thousands of listings, sell your car with confidence, and calculate finance in seconds.",
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default async function RootLayout({ children }: LayoutProps<"/">) {
+  const listings = await getActiveListings();
+
   return (
     <html
       lang="en"
@@ -33,10 +37,12 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     >
       <body className="min-h-full flex flex-col">
         <AuthProvider>
-          <SiteHeader />
-          <main className="flex-1">{children}</main>
-          <SiteFooter />
-          <Toaster />
+          <ListingsProvider listings={listings}>
+            <SiteHeader />
+            <main className="flex-1">{children}</main>
+            <SiteFooter />
+            <Toaster />
+          </ListingsProvider>
         </AuthProvider>
       </body>
     </html>

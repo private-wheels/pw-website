@@ -1,11 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Camera, Check, ChevronLeft, ChevronRight, Sparkles } from "lucide-react";
+import { Check, ChevronLeft, ChevronRight, Loader2, Sparkles } from "lucide-react";
 import { useAuth } from "@/context/auth-context";
-import { createListing, updateListing } from "@/lib/store/listings";
+import { ListingError, createListing, updateListing } from "@/lib/store/listings";
+import { deleteListingPhotos } from "@/lib/storage";
 import { formatCurrency } from "@/lib/format";
 import type {
   AccidentHistory,
@@ -13,8 +14,10 @@ import type {
   Condition,
   FuelType,
   Province,
+  NewVehicleInput,
   ServiceHistory,
   Transmission,
+  User,
   Vehicle,
 } from "@/lib/types";
 import {
@@ -43,6 +46,7 @@ import {
 } from "@/components/ui/select";
 import { SiteContainer } from "@/components/site-container";
 import { ListingPreviewCard } from "@/components/listing-preview-card";
+import { PhotoUploader } from "@/components/photo-uploader";
 
 export interface FormState {
   make: string;
@@ -63,6 +67,11 @@ export interface FormState {
   colour: string;
   features: string[];
   description: string;
+  /** Public URLs of uploaded photos; the first is the cover. */
+  images: string[];
+  /** Contact details shown to buyers on the listing. */
+  sellerName: string;
+  phone: string;
 }
 
 const EMPTY_FORM: FormState = {
@@ -84,6 +93,9 @@ const EMPTY_FORM: FormState = {
   colour: "",
   features: [],
   description: "",
+  images: [],
+  sellerName: "",
+  phone: "",
 };
 
 function vehicleToForm(v: Vehicle): FormState {
@@ -106,7 +118,15 @@ function vehicleToForm(v: Vehicle): FormState {
     colour: v.colour,
     features: v.features,
     description: v.description,
+    images: v.images,
+    sellerName: v.sellerName,
+    phone: v.phone,
   };
+}
+
+function initialForm(existing: Vehicle | undefined, user: User | null): FormState {
+  if (existing) return vehicleToForm(existing);
+  return { ...EMPTY_FORM, sellerName: user?.name ?? "", phone: user?.phone ?? "" };
 }
 
 const STEPS = ["Vehicle Details", "Specs & Features", "Photos", "Description & Price", "Review"];
@@ -121,12 +141,15 @@ export function ListingWizard({
   showWelcome?: boolean;
 }) {
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, updateProfile } = useAuth();
   const [step, setStep] = useState(0);
-  const [form, setForm] = useState<FormState>(
-    existingListing ? vehicleToForm(existingListing) : EMPTY_FORM,
-  );
+  const [form, setForm] = useState<FormState>(() => initialForm(existingListing, user));
   const [submitting, setSubmitting] = useState(false);
+  // Photos uploaded in this session can be deleted from storage as soon as
+  // they're removed. Photos already saved on the listing are only deleted
+  // once the edit is saved, so abandoning the edit doesn't break the listing.
+  const uploadedThisSession = useRef(new Set<string>());
+  const [removedSavedPhotos, setRemovedSavedPhotos] = useState<string[]>([]);
 
   function set<K extends keyof FormState>(key: K, value: FormState[K]) {
     setForm((f) => ({ ...f, [key]: value }));
@@ -143,6 +166,25 @@ export function ListingWizard({
 
   const canContinueStep0 = form.make && form.model && form.year && form.price && form.province && form.bodyType;
 
+  function handlePhotosChange(update: (images: string[]) => string[]) {
+    setForm((f) => {
+      const images = update(f.images);
+      images.forEach((url) => {
+        if (!f.images.includes(url)) uploadedThisSession.current.add(url);
+      });
+      return { ...f, images };
+    });
+  }
+
+  function handlePhotoRemoved(url: string) {
+    if (uploadedThisSession.current.has(url)) {
+      uploadedThisSession.current.delete(url);
+      void deleteListingPhotos([url]);
+    } else {
+      setRemovedSavedPhotos((urls) => [...urls, url]);
+    }
+  }
+
   function goNext() {
     setStep((s) => Math.min(s + 1, STEPS.length - 1));
   }
@@ -150,11 +192,16 @@ export function ListingWizard({
     setStep((s) => Math.max(s - 1, 0));
   }
 
-  function handlePublish() {
+  async function handlePublish() {
     if (!user) return;
+    if (!form.sellerName.trim() || !form.phone.trim()) {
+      toast.error("Add your name and contact number so buyers can reach you.");
+      setStep(3);
+      return;
+    }
     setSubmitting(true);
 
-    const payload = {
+    const payload: NewVehicleInput = {
       make: form.make,
       model: form.model,
       variant: form.variant,
@@ -173,18 +220,36 @@ export function ListingWizard({
       colour: form.colour || "White",
       features: form.features,
       description: form.description,
+      images: form.images,
+      sellerName: form.sellerName.trim(),
+      phone: form.phone.trim(),
     };
 
-    if (mode === "edit" && existingListing) {
-      updateListing(existingListing.id, payload);
-      toast.success("Listing updated.");
-      router.push("/dashboard");
-    } else {
-      createListing(payload, user);
-      toast.success("Your listing is live.");
-      router.push("/dashboard");
+    try {
+      if (mode === "edit" && existingListing) {
+        await updateListing(existingListing.id, payload);
+        await deleteListingPhotos(removedSavedPhotos);
+        toast.success("Listing updated.");
+      } else {
+        await createListing(payload);
+        toast.success("Your listing is live.");
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error(
+        err instanceof ListingError
+          ? "We couldn't save your listing. Check the details and try again."
+          : "Something went wrong. Please try again.",
+      );
+      setSubmitting(false);
+      return;
     }
-    setSubmitting(false);
+
+    // Remember contact details for the next listing (best effort).
+    if (payload.sellerName !== user.name || payload.phone !== user.phone) {
+      updateProfile({ name: payload.sellerName, phone: payload.phone }).catch(() => {});
+    }
+    router.push("/dashboard");
   }
 
   return (
@@ -447,26 +512,55 @@ export function ListingWizard({
           </div>
         )}
 
-        {step === 2 && (
-          <div className="flex flex-col items-center justify-center gap-3 rounded-lg border-2 border-dashed py-16 text-center">
-            <Camera className="h-10 w-10 text-muted-foreground" strokeWidth={1.25} />
-            <p className="font-semibold">Photo upload coming soon</p>
-            <p className="max-w-sm text-sm text-muted-foreground">
-              Photo and video uploads will be available once cloud storage is connected. For
-              now, your listing will show a placeholder image.
-            </p>
-          </div>
+        {step === 2 && user && (
+          <PhotoUploader
+            userId={user.id}
+            images={form.images}
+            onChange={handlePhotosChange}
+            onRemove={handlePhotoRemoved}
+          />
         )}
 
         {step === 3 && (
-          <div className="flex flex-col gap-1.5">
-            <Label>Description</Label>
-            <Textarea
-              rows={8}
-              value={form.description}
-              onChange={(e) => set("description", e.target.value)}
-              placeholder="Describe your vehicle's condition, history, and any extras..."
-            />
+          <div className="flex flex-col gap-6">
+            <div className="flex flex-col gap-1.5">
+              <Label>Description</Label>
+              <Textarea
+                rows={8}
+                value={form.description}
+                onChange={(e) => set("description", e.target.value)}
+                placeholder="Describe your vehicle's condition, history, and any extras..."
+              />
+            </div>
+            <div>
+              <p className="text-sm font-semibold">How buyers reach you</p>
+              <p className="text-sm text-muted-foreground">
+                Shown on your listing. Buyers tap to reveal your number.
+              </p>
+              <div className="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="seller-name">Your name</Label>
+                  <Input
+                    id="seller-name"
+                    value={form.sellerName}
+                    onChange={(e) => set("sellerName", e.target.value)}
+                    placeholder="e.g. Thandi Nkosi"
+                    maxLength={80}
+                  />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="seller-phone">Contact number</Label>
+                  <Input
+                    id="seller-phone"
+                    type="tel"
+                    value={form.phone}
+                    onChange={(e) => set("phone", e.target.value)}
+                    placeholder="e.g. 082 123 4567"
+                    maxLength={30}
+                  />
+                </div>
+              </div>
+            </div>
           </div>
         )}
 
@@ -493,6 +587,11 @@ export function ListingWizard({
               <ReviewField label="Colour" value={form.colour || "—"} />
               <ReviewField label="Previous Owners" value={form.previousOwners || "—"} />
               <ReviewField label="Features" value={`${form.features.length} selected`} />
+              <ReviewField label="Photos" value={`${form.images.length} added`} />
+              <ReviewField
+                label="Contact"
+                value={[form.sellerName, form.phone].filter(Boolean).join(" · ") || "—"}
+              />
             </div>
             {form.description && (
               <div>
@@ -525,10 +624,11 @@ export function ListingWizard({
           </Button>
         ) : (
           <Button
-            onClick={handlePublish}
+            onClick={() => void handlePublish()}
             disabled={submitting}
             className="rounded-full bg-primary hover:bg-primary/90"
           >
+            {submitting && <Loader2 className="h-4 w-4 animate-spin" />}
             {mode === "edit" ? "Save Changes" : "Publish Listing"}
           </Button>
         )}

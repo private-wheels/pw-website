@@ -12,7 +12,7 @@ import {
   TRANSMISSIONS,
 } from "@/lib/data/constants";
 import { countActiveFilters, countMatching, parseMultiValue } from "@/lib/filter";
-import { getMakeIndex } from "@/lib/data/seed-vehicles";
+import { getMakeIndex } from "@/lib/make-index";
 import type { FilterState, Vehicle } from "@/lib/types";
 import { formatCurrency, formatMileage, formatNumber } from "@/lib/format";
 import { Label } from "@/components/ui/label";
