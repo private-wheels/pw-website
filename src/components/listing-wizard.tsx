@@ -6,6 +6,8 @@ import { toast } from "sonner";
 import { Check, ChevronLeft, ChevronRight, Loader2, Sparkles } from "lucide-react";
 import { useAuth } from "@/context/auth-context";
 import { ListingError, createListing, updateListing } from "@/lib/store/listings";
+import { PaymentError, goToCheckout } from "@/lib/store/payments";
+import { LISTING_FEE_RAND } from "@/lib/payments";
 import { deleteListingPhotos } from "@/lib/storage";
 import { formatCurrency } from "@/lib/format";
 import type {
@@ -225,14 +227,14 @@ export function ListingWizard({
       phone: form.phone.trim(),
     };
 
+    let created: Vehicle | null = null;
     try {
       if (mode === "edit" && existingListing) {
         await updateListing(existingListing.id, payload);
         await deleteListingPhotos(removedSavedPhotos);
         toast.success("Listing updated.");
       } else {
-        await createListing(payload);
-        toast.success("Your listing is live.");
+        created = await createListing(payload);
       }
     } catch (err) {
       console.error(err);
@@ -248,6 +250,21 @@ export function ListingWizard({
     // Remember contact details for the next listing (best effort).
     if (payload.sellerName !== user.name || payload.phone !== user.phone) {
       updateProfile({ name: payload.sellerName, phone: payload.phone }).catch(() => {});
+    }
+
+    // New listings go live once the listing fee is paid on Paystack.
+    if (created) {
+      try {
+        await goToCheckout(created.id);
+        return;
+      } catch (err) {
+        console.error(err);
+        toast.error(
+          err instanceof PaymentError
+            ? `Your listing is saved. ${err.message}`
+            : "Your listing is saved, but we couldn't start the payment. Pay from your dashboard.",
+        );
+      }
     }
     router.push("/dashboard");
   }
@@ -599,6 +616,14 @@ export function ListingWizard({
                 <p className="mt-1 text-sm">{form.description}</p>
               </div>
             )}
+            {mode === "create" && (
+              <p className="rounded-lg border bg-muted/40 p-4 text-sm text-muted-foreground">
+                Listing your car costs a once-off{" "}
+                <span className="font-semibold text-foreground">R{LISTING_FEE_RAND}</span>. You&apos;ll
+                pay securely with Paystack next, and your listing goes live as soon as the payment
+                clears.
+              </p>
+            )}
           </div>
         )}
       </div>
@@ -629,7 +654,7 @@ export function ListingWizard({
             className="rounded-full bg-primary hover:bg-primary/90"
           >
             {submitting && <Loader2 className="h-4 w-4 animate-spin" />}
-            {mode === "edit" ? "Save Changes" : "Publish Listing"}
+            {mode === "edit" ? "Save Changes" : `Continue to Payment · R${LISTING_FEE_RAND}`}
           </Button>
         )}
       </div>

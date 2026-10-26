@@ -1,11 +1,15 @@
 "use client";
 
+import { Suspense, useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
-import { Loader2, MoreVertical, Pause, Pencil, Play, Plus, Trash2 } from "lucide-react";
+import { CreditCard, Loader2, MoreVertical, Pause, Pencil, Play, Plus, Trash2 } from "lucide-react";
 import { useAuth } from "@/context/auth-context";
 import { useUserListings } from "@/hooks/use-listings";
 import { deleteListing, setListingStatus } from "@/lib/store/listings";
+import { PaymentError, goToCheckout } from "@/lib/store/payments";
+import { LISTING_FEE_RAND } from "@/lib/payments";
 import type { Vehicle } from "@/lib/types";
 import { formatCurrency, formatMileage } from "@/lib/format";
 import { VehicleMedia } from "@/components/vehicle-media";
@@ -19,15 +23,49 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 const STATUS_STYLES: Record<string, string> = {
+  pending_payment: "bg-orange-100 text-orange-700",
   active: "bg-green-100 text-green-700",
   paused: "bg-amber-100 text-amber-700",
   sold: "bg-slate-200 text-slate-700",
   draft: "bg-blue-100 text-blue-700",
 };
 
+const STATUS_LABELS: Record<string, string> = {
+  pending_payment: "awaiting payment",
+};
+
+/**
+ * Shows the result of a Paystack checkout once, then tidies the URL. Paystack
+ * returns the seller to /api/paystack/callback, which redirects here with
+ * `?payment=success|failed|pending`.
+ */
+function PaymentOutcomeToast({ onPaid }: { onPaid: () => void }) {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const outcome = searchParams.get("payment");
+  const shown = useRef(false);
+
+  useEffect(() => {
+    if (!outcome || shown.current) return;
+    shown.current = true;
+    if (outcome === "success") {
+      toast.success("Payment received. Your listing is live!");
+      onPaid();
+    } else if (outcome === "pending") {
+      toast.info("We're still confirming your payment. Your listing will go live shortly.");
+    } else {
+      toast.error("Your payment didn't go through. You can try again from your listing.");
+    }
+    router.replace("/dashboard");
+  }, [outcome, onPaid, router]);
+
+  return null;
+}
+
 export default function DashboardPage() {
   const { user } = useAuth();
   const { listings, loading, error, reload } = useUserListings(user?.id);
+  const [payingId, setPayingId] = useState<string | null>(null);
 
   const activeCount = listings.filter((l) => l.status === "active").length;
   const totalValue = listings
@@ -42,6 +80,18 @@ export default function DashboardPage() {
       toast.success(pausing ? "Listing paused." : "Listing reactivated.");
     } catch {
       toast.error("Couldn't update the listing. Please try again.");
+    }
+  }
+
+  async function handlePay(listing: Vehicle) {
+    setPayingId(listing.id);
+    try {
+      await goToCheckout(listing.id);
+    } catch (err) {
+      toast.error(
+        err instanceof PaymentError ? err.message : "Couldn't start the payment. Please try again.",
+      );
+      setPayingId(null);
     }
   }
 
@@ -60,6 +110,9 @@ export default function DashboardPage() {
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6 lg:px-8">
+      <Suspense fallback={null}>
+        <PaymentOutcomeToast onPaid={reload} />
+      </Suspense>
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">
@@ -141,7 +194,7 @@ export default function DashboardPage() {
                     {listing.year} {listing.make} {listing.model} {listing.variant}
                   </p>
                   <Badge className={STATUS_STYLES[listing.status]} variant="secondary">
-                    {listing.status}
+                    {STATUS_LABELS[listing.status] ?? listing.status}
                   </Badge>
                 </div>
                 <p className="text-sm text-muted-foreground">
@@ -151,6 +204,21 @@ export default function DashboardPage() {
               </div>
 
               <div className="flex items-center gap-2">
+                {listing.status === "pending_payment" && (
+                  <Button
+                    size="sm"
+                    className="bg-primary hover:bg-primary/90"
+                    disabled={payingId !== null}
+                    onClick={() => void handlePay(listing)}
+                  >
+                    {payingId === listing.id ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    ) : (
+                      <CreditCard className="h-3.5 w-3.5" />
+                    )}
+                    Pay R{LISTING_FEE_RAND}
+                  </Button>
+                )}
                 <Button
                   variant="outline"
                   size="sm"
@@ -170,17 +238,19 @@ export default function DashboardPage() {
                     }
                   />
                   <DropdownMenuContent align="end">
-                    <DropdownMenuItem onClick={() => void handleToggleStatus(listing)}>
-                      {listing.status === "active" ? (
-                        <>
-                          <Pause className="h-4 w-4" /> Pause Listing
-                        </>
-                      ) : (
-                        <>
-                          <Play className="h-4 w-4" /> Reactivate Listing
-                        </>
-                      )}
-                    </DropdownMenuItem>
+                    {listing.status !== "pending_payment" && (
+                      <DropdownMenuItem onClick={() => void handleToggleStatus(listing)}>
+                        {listing.status === "active" ? (
+                          <>
+                            <Pause className="h-4 w-4" /> Pause Listing
+                          </>
+                        ) : (
+                          <>
+                            <Play className="h-4 w-4" /> Reactivate Listing
+                          </>
+                        )}
+                      </DropdownMenuItem>
+                    )}
                     <DropdownMenuItem
                       variant="destructive"
                       onClick={() => void handleDelete(listing)}

@@ -24,6 +24,7 @@ export type Database = {
           mileage: number;
           model: string;
           original_price: number | null;
+          paid_at: string | null;
           previous_owners: number;
           price: number;
           province: string;
@@ -54,6 +55,7 @@ export type Database = {
           mileage?: number;
           model: string;
           original_price?: number | null;
+          paid_at?: string | null;
           previous_owners?: number;
           price: number;
           province: string;
@@ -84,6 +86,7 @@ export type Database = {
           mileage?: number;
           model?: string;
           original_price?: number | null;
+          paid_at?: string | null;
           previous_owners?: number;
           price?: number;
           province?: string;
@@ -97,6 +100,51 @@ export type Database = {
           updated_at?: string;
           variant?: string;
           year?: number;
+        };
+        Relationships: [];
+      };
+      payments: {
+        Row: {
+          amount_cents: number;
+          channel: string | null;
+          created_at: string;
+          currency: string;
+          id: string;
+          listing_id: string | null;
+          paid_at: string | null;
+          paystack_transaction_id: number | null;
+          reference: string;
+          seller_id: string | null;
+          status: string;
+          updated_at: string;
+        };
+        Insert: {
+          amount_cents: number;
+          channel?: string | null;
+          created_at?: string;
+          currency?: string;
+          id?: string;
+          listing_id?: string | null;
+          paid_at?: string | null;
+          paystack_transaction_id?: number | null;
+          reference: string;
+          seller_id?: string | null;
+          status?: string;
+          updated_at?: string;
+        };
+        Update: {
+          amount_cents?: number;
+          channel?: string | null;
+          created_at?: string;
+          currency?: string;
+          id?: string;
+          listing_id?: string | null;
+          paid_at?: string | null;
+          paystack_transaction_id?: number | null;
+          reference?: string;
+          seller_id?: string | null;
+          status?: string;
+          updated_at?: string;
         };
         Relationships: [];
       };
@@ -133,3 +181,4 @@ export type ListingRow = Database["public"]["Tables"]["listings"]["Row"];
 export type ListingInsert = Database["public"]["Tables"]["listings"]["Insert"];
 export type ListingUpdate = Database["public"]["Tables"]["listings"]["Update"];
 export type ProfileRow = Database["public"]["Tables"]["profiles"]["Row"];
+export type PaymentRow = Database["public"]["Tables"]["payments"]["Row"];

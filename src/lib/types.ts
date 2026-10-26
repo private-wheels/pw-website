@@ -32,7 +32,7 @@ export type Province =
   | "Northern Cape"
   | "Western Cape";
 
-export type ListingStatus = "active" | "paused" | "sold" | "draft";
+export type ListingStatus = "pending_payment" | "active" | "paused" | "sold" | "draft";
 
 export interface Vehicle {
   id: string;
