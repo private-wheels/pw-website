@@ -1,40 +1,114 @@
 # Launch checklist
 
-Things to do before the site goes live (before setting `SITE_LAUNCHED=true`
-in Vercel). Tick them off as they're done.
+Everything between now and launch day, in order. Tick items off as they're
+done. "Vercel" means the production project's Environment Variables (redeploy
+after changing them).
 
-## Test the seller flow end to end
+## 1. Production configuration (do now)
 
-- [ ] Run through it both locally (`npm run dev`) and on the live site
-      (unlocked with the preview PIN): register → click the confirmation email
-      link → publish a listing with a few photos → check it appears on the
-      home page, `/cars` and its own page → pause, edit (change the price and
-      photos) and delete it from the dashboard.
+`main` already has payments, admin review and the `/list` pre-launch flow. If
+Vercel deploys `main`, `/list` is reachable on the live site, so it needs these
+before anyone uses it.
 
-## Supabase
+- [ ] **Vercel env vars** (see `.env.example` for what each one does):
+  - `SUPABASE_SECRET_KEY`: Supabase → Project Settings → API Keys (`sb_secret_…`).
+    Server-only, never `NEXT_PUBLIC_`.
+  - `PAYSTACK_SECRET_KEY`: the **test** key (`sk_test_…`) until step 3.
+  - `RESEND_API_KEY`: needed for the listing review emails as well as leads.
+  - `NEXT_PUBLIC_SITE_URL=https://www.private-wheels.co.za`
+  - Optional: `LISTING_EMAIL_FROM`, `ADMIN_NOTIFY_EMAIL` (both default to
+    hello@private-wheels.co.za).
+  - Leave `FOUNDING_PRICE` **unset** in production, so sellers pay R125 until
+    launch and R249 after.
+- [ ] **Paystack webhook (test mode):** Paystack → Settings → API Keys &
+      Webhooks → Test Webhook URL
+      `https://www.private-wheels.co.za/api/paystack/webhook`
+- [ ] **Turnstile (bot check), in this order:**
+  1. Cloudflare → Turnstile → Add widget. Hostnames: `private-wheels.co.za`,
+     `www.private-wheels.co.za`, `localhost`. Mode: Managed.
+  2. Put the **site key** in Vercel as `NEXT_PUBLIC_TURNSTILE_SITE_KEY` (and in
+     `.env.local`), then **deploy**.
+  3. Only once that's live: Supabase → Authentication → Attack Protection →
+     enable CAPTCHA → Turnstile → paste the **secret key**.
 
-- [ ] **Send auth emails through Resend instead of Supabase's built-in email
-      sender.** The built-in sender is heavily rate-limited and meant for
-      testing only, so sign-up confirmation emails will stop arriving once real
-      users register.
-      Supabase dashboard → Authentication → Emails → SMTP Settings → enable
-      custom SMTP:
-      - Host `smtp.resend.com`, port `465`, username `resend`
-      - Password: a Resend API key with sending access
-      - Sender: an address on `private-wheels.co.za`, e.g.
-        `Private Wheels <noreply@private-wheels.co.za>`
+  Doing step 3 first blocks every sign-in and sign-up until step 2 is deployed.
+- [ ] **Leaked password protection:** Supabase → Authentication → Attack
+      Protection (or Providers → Email) → turn on.
 
-      This needs `private-wheels.co.za` verified in Resend (resend.com/domains),
-      the same prerequisite as the lead-form emails.
+Already done:
 
-- [ ] **Delete the demo listings.** The 43 cars carried over from the old seed
-      data have made-up seller names and phone numbers. They're the only rows
-      with no seller, so in the Supabase SQL editor run:
+- [x] Payments, roles/review and anonymous clean-up migrations applied
+- [x] Admins: jpswart80@gmail.com, will@private-wheels.co.za
+- [x] Auth emails sent through Resend (custom SMTP), with a raised email rate limit
+- [x] Email templates use `token_hash` links, so confirmations work on any device
+- [x] Anonymous sign-ins switched on (needed for `/list`)
+- [x] `private-wheels.co.za` verified in Resend
+
+## 2. Test on the live site (test card)
+
+Paystack test card: `4084 0840 8408 4081`, any future expiry, CVV `408`.
+
+- [ ] **`/list` as a new seller:** in a private window, go to
+      `/list` → Start your listing → add a car with photos → I'm new here (an
+      email you can check) → pay **R125** → "You're all set!"
+  - [ ] Received "We've received your listing" and the confirm-email link
+  - [ ] The link opens `/list/password`, and the password works on `/login`
+- [ ] **`/list` with an existing account:** choose "I have an account" and sign
+      in. The listing (and photos) show up on that account's dashboard.
+- [ ] **Admin review** (signed in as an admin → Dashboard → Admin):
+  - [ ] Approve one: the seller gets the "approved" email
+  - [ ] Request changes on one: the seller sees the note, edits, presses
+        **Save & Resubmit**, and it's back in the queue
+  - [ ] Reject one with refund ticked: Payments shows *refund pending*, then
+        *refunded* once Paystack confirms
+- [ ] **Admin listing:** create a listing as an admin. It publishes without
+      payment.
+- [ ] **Gate:** signed out, `/`, `/cars` and `/finance` show the coming-soon
+      page; `/list`, `/login`, `/register` and `/legal/*` open.
+
+## 3. Go live with payments
+
+- [ ] Vercel: switch `PAYSTACK_SECRET_KEY` to the **live** key (`sk_live_…`).
+      Keep `sk_test_…` in `.env.local`.
+- [ ] Paystack → Live Webhook URL:
+      `https://www.private-wheels.co.za/api/paystack/webhook`
+- [ ] One real R125 payment through `/list`, then refund it from
+      Admin → Payments. Check it reaches the card.
+
+## 4. Legal and compliance
+
+- [ ] Set the policies' effective date: `LEGAL_LAST_UPDATED` /
+      `[EFFECTIVE DATE]` in `src/lib/legal.ts`.
+- [ ] Attorney review of `/legal/privacy`, `/legal/terms` and `/legal/refunds`.
+- [ ] Register the Information Officer (Wilhelm Stoltz) with the Information
+      Regulator (inforegulator.org.za).
+- [ ] Confirm whether a PAIA manual is required, or the small private body
+      exemption applies.
+
+## 5. Before inviting sellers (recommended)
+
+- [ ] **Forgot password.** "Forgot password?" on `/login` is plain text with no
+      reset flow. Without one, anyone who forgets their password, or a `/list`
+      seller who lost the confirm-email link, can't get back in.
+
+## 6. Launch day
+
+- [ ] **Delete the demo listings.** The 43 seeded cars are the only rows with
+      no seller. In the Supabase SQL editor:
 
       ```sql
       delete from public.listings where seller_id is null;
       ```
 
-      Their photos are static files in `public/listings/` (not in Storage), so
-      nothing else needs cleaning up. Optionally remove
-      `public/listings/bmw-x1-sdrive18d/` afterwards.
+      Their photos are static files in `public/listings/` (not in Storage).
+      Optionally remove `public/listings/bmw-x1-sdrive18d/` afterwards.
+- [ ] **Vercel: `SITE_LAUNCHED=true`** and redeploy. The marketplace opens,
+      approved founding listings go live, and new listings cost R249 (unless
+      `FOUNDING_PRICE=on`).
+- [ ] **Check the public site:** home page, `/cars`, a listing page, and
+      Sell your car → listing → pay **R249** → review.
+- [ ] Tell the founding sellers they're live.
+
+## Later
+
+- [ ] Smile ID seller verification (waiting on their team)
