@@ -8,6 +8,7 @@ import { useAuth } from "@/context/auth-context";
 import { ListingError, createListing, updateListing } from "@/lib/store/listings";
 import { PaymentError, goToCheckout } from "@/lib/store/payments";
 import { useListingFee } from "@/hooks/use-listing-fee";
+import { LISTING_FEE_CENTS, formatFee } from "@/lib/payments";
 import { publishWithoutPayment } from "@/app/actions/admin";
 import { resubmitListing } from "@/app/actions/listings";
 import { deleteListingPhotos } from "@/lib/storage";
@@ -656,7 +657,9 @@ export function ListingWizard({
               <p className="rounded-lg border bg-muted/40 p-4 text-sm text-muted-foreground">
                 Listing your car costs a once-off{" "}
                 <span className="font-semibold text-foreground">{fee.label}</span>
-                {fee.founding && " (founding-seller price, 50% off until launch)"}.{" "}
+                {fee.founding &&
+                  ` as a founding seller (it goes up to ${formatFee(LISTING_FEE_CENTS)} when we launch)`}
+                .{" "}
                 {user?.isAnonymous ? "Next, you'll add your email and pay" : "You'll pay"} securely with
                 Paystack. Our team then reviews your listing, usually within
                 one working day, and it goes live once it&apos;s approved.

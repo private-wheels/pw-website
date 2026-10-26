@@ -8,6 +8,7 @@ import { useAuth } from "@/context/auth-context";
 import { claimListing } from "@/app/actions/list";
 import { publishWithoutPayment } from "@/app/actions/admin";
 import { useListingFee } from "@/hooks/use-listing-fee";
+import { LISTING_FEE_CENTS, formatFee } from "@/lib/payments";
 import { AuthError, currentAccessToken, linkEmail, login } from "@/lib/store/auth";
 import { fetchListing } from "@/lib/store/listings";
 import { PaymentError, goToCheckout } from "@/lib/store/payments";
@@ -261,6 +262,12 @@ function AccountStep() {
         )}
         {!user.isAnonymous && error && <p className="mt-3 text-sm text-destructive">{error}</p>}
       </div>
+
+      {fee.founding && user.role !== "admin" && (
+        <p className="mt-3 text-center text-xs text-muted-foreground">
+          {fee.label} is the founding-seller price. Listings cost {formatFee(LISTING_FEE_CENTS)} once we launch.
+        </p>
+      )}
 
       <HelpCallout className="mt-6" />
     </div>

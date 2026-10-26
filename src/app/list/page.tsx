@@ -33,7 +33,7 @@ export default function ListYourCarPage() {
         {preLaunch && (
           <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
             <CalendarClock className="h-3.5 w-3.5" />
-            Founding sellers: 50% off until launch
+            Founding-seller price: {price} until launch
           </span>
         )}
         <h1 className="mt-4 text-4xl font-semibold tracking-tight text-balance sm:text-5xl">
@@ -54,8 +54,8 @@ export default function ListYourCarPage() {
           <p className="text-sm text-muted-foreground">
             {preLaunch ? (
               <>
-                <span className="font-semibold text-foreground">{price}</span> once-off{" "}
-                <span className="line-through">{formatFee(LISTING_FEE_CENTS)}</span> · No account needed to start
+                <span className="font-semibold text-foreground">{price} now</span> as a founding seller ·{" "}
+                {formatFee(LISTING_FEE_CENTS)} once we launch · No account needed to start
               </>
             ) : (
               <>
