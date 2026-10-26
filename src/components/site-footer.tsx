@@ -3,6 +3,7 @@ import { ArrowUp, Mail, MessageCircle, ShieldCheck, Tag } from "lucide-react";
 import { SiteContainer } from "@/components/site-container";
 import { BrandLogo } from "@/components/brand-mark";
 import { COMING_SOON } from "@/lib/coming-soon";
+import { LEGAL_LINKS } from "@/lib/legal";
 
 const FOOTER_COLUMNS = [
   {
@@ -101,6 +102,13 @@ export function SiteFooter() {
       <div className="border-t border-background/15">
         <SiteContainer className="flex flex-col items-center justify-between gap-4 py-6 text-sm opacity-70 sm:flex-row">
           <p>© {new Date().getFullYear()} Private Wheels (Pty) Ltd. All rights reserved.</p>
+          <nav aria-label="Legal" className="flex flex-wrap justify-center gap-x-5 gap-y-2">
+            {LEGAL_LINKS.map((link) => (
+              <Link key={link.href} href={link.href} className="hover:opacity-100 hover:underline">
+                {link.label}
+              </Link>
+            ))}
+          </nav>
           <a
             href="#"
             className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-colors hover:bg-background/10"

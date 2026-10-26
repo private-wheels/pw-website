@@ -14,6 +14,9 @@ import { updateSession } from "@/lib/supabase/proxy";
  *   SITE_LAUNCHED=true        → gate off, the whole site is open
  *   (unset / anything else)   → gated (the safe default)
  *
+ * The policy pages under /legal stay public too, since the holding page and
+ * its lead form link to them.
+ *
  * Two ways to preview while gated (both need PREVIEW_TOKEN set):
  *   - /preview — a friendly 4-digit PIN page for demos/presentations.
  *   - opening any URL once with `?preview=<PREVIEW_TOKEN>`.

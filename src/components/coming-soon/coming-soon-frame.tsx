@@ -1,4 +1,6 @@
 import type { ReactNode } from "react";
+import Link from "next/link";
+import { LEGAL_LINKS } from "@/lib/legal";
 
 /**
  * Full-bleed shell for the pre-launch holding page. It sits `fixed inset-0` so
@@ -25,6 +27,19 @@ export function ComingSoonFrame({ children }: { children: ReactNode }) {
         </p>
         {children}
       </main>
+
+      <footer className="relative px-6 pb-6">
+        <nav
+          aria-label="Legal"
+          className="flex flex-wrap justify-center gap-x-5 gap-y-2 text-xs text-muted-foreground"
+        >
+          {LEGAL_LINKS.map((link) => (
+            <Link key={link.href} href={link.href} className="hover:text-foreground">
+              {link.label}
+            </Link>
+          ))}
+        </nav>
+      </footer>
     </div>
   );
 }
