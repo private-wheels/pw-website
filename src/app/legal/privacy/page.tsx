@@ -60,7 +60,12 @@ export default function PrivacyPolicyPage() {
         </p>
         <ul>
           <li>Name: {BUSINESS.informationOfficer}</li>
-          <li>Email: {BUSINESS.informationOfficerEmail}</li>
+          <li>
+            Email:{" "}
+            <a href={`mailto:${BUSINESS.informationOfficerEmail}`}>
+              {BUSINESS.informationOfficerEmail}
+            </a>
+          </li>
           <li>Postal and physical address: {BUSINESS.address}</li>
         </ul>
       </LegalSection>

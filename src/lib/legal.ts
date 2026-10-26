@@ -12,15 +12,15 @@ export const LEGAL_LAST_UPDATED = "[EFFECTIVE DATE]";
 export const BUSINESS = {
   legalName: "PRIVATEWHEELS (PTY) LTD",
   tradingName: "Private Wheels",
-  registrationNumber: "[REGISTRATION NUMBER]",
+  registrationNumber: "2025/889931/07",
   vatNumber: "[VAT NUMBER, IF REGISTERED]",
-  directors: "[DIRECTOR NAME(S)]",
+  directors: "Wilhelm Johannes Stoltz",
   address: "18 Peter Rd, Ruimsig, Roodepoort, 1724, Gauteng, South Africa",
   email: "hello@private-wheels.co.za",
   phone: "+27 82 813 9950",
   website: "https://www.private-wheels.co.za",
-  informationOfficer: "[INFORMATION OFFICER NAME]",
-  informationOfficerEmail: "[INFORMATION OFFICER EMAIL]",
+  informationOfficer: "Wilhelm Stoltz (Director)",
+  informationOfficerEmail: "hello@private-wheels.co.za",
 } as const;
 
 export const LISTING_FEE = {
