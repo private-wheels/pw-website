@@ -28,12 +28,18 @@ before anyone uses it.
      `www.private-wheels.co.za`, `localhost`. Mode: Managed.
   2. Put the **site key** in Vercel as `NEXT_PUBLIC_TURNSTILE_SITE_KEY` (and in
      `.env.local`), then **deploy**.
-  3. Only once that's live: Supabase → Authentication → Attack Protection →
-     enable CAPTCHA → Turnstile → paste the **secret key**.
+  3. Only once that's live (the bot check shows on `/login`): Supabase →
+     Authentication → Attack Protection (under Configuration) → CAPTCHA
+     protection → Turnstile → paste the **secret key**.
 
   Doing step 3 first blocks every sign-in and sign-up until step 2 is deployed.
-- [ ] **Leaked password protection:** Supabase → Authentication → Attack
-      Protection (or Providers → Email) → turn on.
+- [ ] **Minimum password length 8:** Supabase → Authentication → Sign In /
+      Providers → Email → Minimum password length `8` (the site already asks
+      for 8). Leave "Password requirements" unset so the site's error message
+      matches.
+- [ ] *(Pro plan only)* Leaked password protection: same Email panel, "Prevent
+      use of leaked passwords". Not available on the free plan; turn it on if
+      you upgrade.
 
 Already done:
 
