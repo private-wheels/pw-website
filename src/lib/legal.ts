@@ -25,7 +25,7 @@ export const BUSINESS = {
 
 export const LISTING_FEE = {
   standard: "R249",
-  founding: "R124.50",
+  founding: "R125",
 } as const;
 
 /** Confirm these against inforegulator.org.za before launch; they do change. */
