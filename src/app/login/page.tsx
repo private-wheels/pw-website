@@ -7,6 +7,7 @@ import { LogIn } from "lucide-react";
 import { useAuth } from "@/context/auth-context";
 import { AuthError } from "@/lib/store/auth";
 import { AuthSplitLayout } from "@/components/auth-split-layout";
+import { useTurnstile } from "@/components/turnstile";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -36,18 +37,20 @@ function LoginForm() {
       : null,
   );
   const [submitting, setSubmitting] = useState(false);
+  const captcha = useTurnstile("login");
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     setError(null);
     setSubmitting(true);
     try {
-      await login(email, password);
+      await login(email, password, captcha.token);
       router.push(safeNext(searchParams.get("next")));
       router.refresh();
     } catch (err) {
       setError(err instanceof AuthError ? err.message : "Something went wrong. Please try again.");
       setSubmitting(false);
+      captcha.reset();
     }
   }
 
@@ -91,12 +94,13 @@ function LoginForm() {
           />
         </div>
 
+        {captcha.widget}
         {error && <p className="text-sm text-destructive">{error}</p>}
 
         <Button
           type="submit"
           size="lg"
-          disabled={submitting}
+          disabled={submitting || !captcha.ready}
           className="mt-2 rounded-full bg-primary hover:bg-primary/90"
         >
           <LogIn className="h-4 w-4" />

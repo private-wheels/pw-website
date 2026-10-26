@@ -7,7 +7,8 @@ import { Check, ChevronLeft, ChevronRight, Loader2, Sparkles } from "lucide-reac
 import { useAuth } from "@/context/auth-context";
 import { ListingError, createListing, updateListing } from "@/lib/store/listings";
 import { PaymentError, goToCheckout } from "@/lib/store/payments";
-import { LISTING_FEE_RAND } from "@/lib/payments";
+import { useListingFee } from "@/hooks/use-listing-fee";
+import { LISTING_FEE_CENTS, formatFee } from "@/lib/payments";
 import { publishWithoutPayment } from "@/app/actions/admin";
 import { resubmitListing } from "@/app/actions/listings";
 import { deleteListingPhotos } from "@/lib/storage";
@@ -49,6 +50,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { SiteContainer } from "@/components/site-container";
+import { HelpCallout } from "@/components/help-callout";
 import { ListingPreviewCard } from "@/components/listing-preview-card";
 import { PhotoUploader } from "@/components/photo-uploader";
 
@@ -147,6 +149,7 @@ export function ListingWizard({
   const router = useRouter();
   const { user, updateProfile } = useAuth();
   const isAdmin = user?.role === "admin";
+  const fee = useListingFee();
   const resubmitting = mode === "edit" && existingListing?.status === "changes_requested";
   const [step, setStep] = useState(0);
   const [form, setForm] = useState<FormState>(() => initialForm(existingListing, user));
@@ -260,6 +263,12 @@ export function ListingWizard({
     // Remember contact details for the next listing (best effort).
     if (payload.sellerName !== user.name || payload.phone !== user.phone) {
       updateProfile({ name: payload.sellerName, phone: payload.phone }).catch(() => {});
+    }
+
+    // Temporary /list accounts add their email (or sign in) before paying.
+    if (created && user.isAnonymous) {
+      router.push(`/list/account?listing=${created.id}`);
+      return;
     }
 
     // Admins publish straight away, without paying or waiting for review.
@@ -647,8 +656,12 @@ export function ListingWizard({
             {mode === "create" && !isAdmin && (
               <p className="rounded-lg border bg-muted/40 p-4 text-sm text-muted-foreground">
                 Listing your car costs a once-off{" "}
-                <span className="font-semibold text-foreground">R{LISTING_FEE_RAND}</span>. You&apos;ll
-                pay securely with Paystack next. Our team then reviews your listing, usually within
+                <span className="font-semibold text-foreground">{fee.label}</span>
+                {fee.founding &&
+                  ` as a founding seller (it goes up to ${formatFee(LISTING_FEE_CENTS)} when we launch)`}
+                .{" "}
+                {user?.isAnonymous ? "Next, you'll add your email and pay" : "You'll pay"} securely with
+                Paystack. Our team then reviews your listing, usually within
                 one working day, and it goes live once it&apos;s approved.
               </p>
             )}
@@ -691,12 +704,15 @@ export function ListingWizard({
               ? "Save & Resubmit"
               : mode === "edit"
                 ? "Save Changes"
-                : isAdmin
+                : user?.isAnonymous
+                  ? "Continue"
+                  : isAdmin
                   ? "Publish Listing"
-                  : `Continue to Payment · R${LISTING_FEE_RAND}`}
+                  : `Continue to Payment · ${fee.label}`}
           </Button>
         )}
       </div>
+      <HelpCallout className="mt-6" />
       </div>
 
       <div className="lg:sticky lg:top-24">

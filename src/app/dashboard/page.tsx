@@ -9,7 +9,7 @@ import { useAuth } from "@/context/auth-context";
 import { useUserListings } from "@/hooks/use-listings";
 import { deleteListing, setListingStatus } from "@/lib/store/listings";
 import { PaymentError, goToCheckout } from "@/lib/store/payments";
-import { LISTING_FEE_RAND } from "@/lib/payments";
+import { useListingFee } from "@/hooks/use-listing-fee";
 import { STATUS_STYLES, STATUS_LABELS } from "@/lib/listing-status";
 import { publishWithoutPayment } from "@/app/actions/admin";
 import type { Vehicle } from "@/lib/types";
@@ -68,6 +68,7 @@ export default function DashboardPage() {
   const { listings, loading, error, reload } = useUserListings(user?.id);
   const [payingId, setPayingId] = useState<string | null>(null);
   const isAdmin = user?.role === "admin";
+  const fee = useListingFee();
 
   const activeCount = listings.filter((l) => l.status === "active").length;
   const totalValue = listings
@@ -254,7 +255,7 @@ export default function DashboardPage() {
                     ) : (
                       <CreditCard className="h-3.5 w-3.5" />
                     )}
-                    {isAdmin ? "Publish" : `Pay R${LISTING_FEE_RAND}`}
+                    {isAdmin ? "Publish" : `Pay ${fee.label}`}
                   </Button>
                 )}
                 {listing.status !== "rejected" && (
