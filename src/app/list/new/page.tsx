@@ -25,10 +25,10 @@ export default function ListNewPage() {
   useEffect(() => {
     if (loading || user || !captcha.ready || started.current) return;
     started.current = true;
+    // One attempt per page load: on failure show the error and let "Try
+    // again" reload, rather than retrying (and spamming Supabase) in a loop.
     startAnonymous(captcha.token).catch((err) => {
       setError(err instanceof AuthError ? err.message : "Something went wrong. Please try again.");
-      started.current = false;
-      captcha.reset();
     });
   }, [loading, user, captcha]);
 
