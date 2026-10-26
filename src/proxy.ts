@@ -14,11 +14,19 @@ import { updateSession } from "@/lib/supabase/proxy";
  *   SITE_LAUNCHED=true        → gate off, the whole site is open
  *   (unset / anything else)   → gated (the safe default)
  *
+ * The policy pages under /legal stay public too, since the holding page and
+ * its lead form link to them.
+ *
  * Two ways to preview while gated (both need PREVIEW_TOKEN set):
  *   - /preview — a friendly 4-digit PIN page for demos/presentations.
  *   - opening any URL once with `?preview=<PREVIEW_TOKEN>`.
  * Either sets a cookie so you (and only you) can browse the real site for a
  * week.
+ *
+ * The sell flow stays open while gated, so sellers can list before launch
+ * from the shareable /list link: /list itself, sign-in and sign-up, email
+ * confirmation, the seller dashboard and the legal pages. The marketplace
+ * (home page, /cars, /finance…) stays behind the holding page.
  *
  * Every request that gets through to the real site also refreshes the
  * Supabase session and guards /dashboard (see lib/supabase/proxy).
@@ -26,6 +34,13 @@ import { updateSession } from "@/lib/supabase/proxy";
 
 const COMING_SOON_PATH = "/coming-soon";
 const PREVIEW_PATH = "/preview";
+
+/** Reachable while gated: the pre-launch sell flow. */
+const OPEN_WHILE_GATED = ["/list", "/login", "/register", "/auth/confirm", "/dashboard", "/legal"];
+
+function isOpenWhileGated(pathname: string): boolean {
+  return OPEN_WHILE_GATED.some((p) => pathname === p || pathname.startsWith(`${p}/`));
+}
 
 export async function proxy(request: NextRequest) {
   if (process.env.SITE_LAUNCHED === "true") {
@@ -38,6 +53,10 @@ export async function proxy(request: NextRequest) {
   // The holding page and the PIN-entry page are always allowed.
   if (pathname === COMING_SOON_PATH || pathname === PREVIEW_PATH) {
     return NextResponse.next();
+  }
+
+  if (isOpenWhileGated(pathname)) {
+    return updateSession(request);
   }
 
   // `?preview=<token>` unlocks the real site and remembers it for a week.

@@ -1,4 +1,7 @@
 import { SUPPORT_EMAIL, type Email } from "@/lib/email";
+import { siteUrl } from "@/lib/site";
+
+export { isPreLaunch } from "@/lib/site";
 
 /**
  * The emails sellers (and admins) get about a listing. Plain inline-styled
@@ -8,14 +11,6 @@ import { SUPPORT_EMAIL, type Email } from "@/lib/email";
 
 const BRAND = "#d90429";
 
-export function siteUrl(): string {
-  return (process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000").replace(/\/$/, "");
-}
-
-/** Before launch, approved listings wait for launch day instead of going live. */
-export function isPreLaunch(): boolean {
-  return process.env.SITE_LAUNCHED !== "true";
-}
 
 function escape(value: string): string {
   return value

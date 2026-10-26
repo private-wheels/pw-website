@@ -18,7 +18,7 @@ export const COMING_SOON = {
    * conversation with this typed and ready — they just tap send.
    */
   whatsappMessage:
-    "Hi Private Wheels,\n\nI want to sell my car privately when you launch. Please send me the voucher.",
+    "Hi Private Wheels,\n\nI'd like to sell my car privately and have a question about listing.",
 
   /** Fallback for people who won't open WhatsApp for a brand they don't know. */
   contactEmail: "hello@private-wheels.co.za",

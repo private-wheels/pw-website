@@ -1,7 +1,9 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogClose,
@@ -17,12 +19,13 @@ import { Label } from "@/components/ui/label";
 /**
  * "Want us to reach out instead?" — a small name + mobile form in a dialog,
  * for visitors who'd rather be contacted than start a WhatsApp chat. Posts to
- * `/api/lead`.
+ * `/api/lead`. Marketing consent is a separate, optional opt-in (POPIA s69).
  */
 export function ReachOutDialog() {
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
   const [mobile, setMobile] = useState("");
+  const [marketingConsent, setMarketingConsent] = useState(false);
   const [company, setCompany] = useState(""); // honeypot
   const [status, setStatus] = useState<"idle" | "sending" | "done">("idle");
   const [error, setError] = useState<string | null>(null);
@@ -30,6 +33,7 @@ export function ReachOutDialog() {
   function resetForm() {
     setName("");
     setMobile("");
+    setMarketingConsent(false);
     setCompany("");
     setStatus("idle");
     setError(null);
@@ -43,7 +47,7 @@ export function ReachOutDialog() {
       const res = await fetch("/api/lead", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ name, mobile, company }),
+        body: JSON.stringify({ name, mobile, marketingConsent, company }),
       });
       if (!res.ok) {
         const data = (await res.json().catch(() => null)) as { error?: string } | null;
@@ -132,6 +136,15 @@ export function ReachOutDialog() {
                 />
               </div>
 
+              <label className="flex items-start gap-2.5 text-sm leading-snug">
+                <Checkbox
+                  checked={marketingConsent}
+                  onCheckedChange={(checked) => setMarketingConsent(checked)}
+                  className="mt-0.5"
+                />
+                <span>Send me launch updates and offers from Private Wheels (optional)</span>
+              </label>
+
               {/* Honeypot — visually hidden, ignored by real users. */}
               <input
                 type="text"
@@ -155,8 +168,16 @@ export function ReachOutDialog() {
               </Button>
 
               <p className="text-xs leading-relaxed text-muted-foreground">
-                We won&apos;t share your details with anyone — they&apos;re only used to
-                get in touch with you directly.
+                We&apos;ll only use your details to get in touch about your request, and
+                won&apos;t sell them to anyone. See our{" "}
+                <Link
+                  href="/legal/privacy"
+                  target="_blank"
+                  className="underline underline-offset-2 hover:text-foreground"
+                >
+                  Privacy Policy
+                </Link>
+                .
               </p>
             </form>
           </>

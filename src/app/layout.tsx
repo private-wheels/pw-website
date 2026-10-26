@@ -6,6 +6,7 @@ import { ListingsProvider } from "@/context/listings-context";
 import { getActiveListings } from "@/lib/data/listings";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
+import { SiteChrome } from "@/components/site-chrome";
 import { Toaster } from "@/components/ui/sonner";
 
 const geistSans = Geist({
@@ -38,9 +39,13 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
       <body className="min-h-full flex flex-col">
         <AuthProvider>
           <ListingsProvider listings={listings}>
-            <SiteHeader />
+            <SiteChrome>
+              <SiteHeader />
+            </SiteChrome>
             <main className="flex-1">{children}</main>
-            <SiteFooter />
+            <SiteChrome>
+              <SiteFooter />
+            </SiteChrome>
             <Toaster />
           </ListingsProvider>
         </AuthProvider>

@@ -7,7 +7,9 @@ import { MailCheck, UserPlus } from "lucide-react";
 import { useAuth } from "@/context/auth-context";
 import { AuthError } from "@/lib/store/auth";
 import { AuthSplitLayout } from "@/components/auth-split-layout";
+import { useTurnstile } from "@/components/turnstile";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
@@ -20,9 +22,11 @@ export default function RegisterPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [confirmationSentTo, setConfirmationSentTo] = useState<string | null>(null);
+  const captcha = useTurnstile("register");
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -36,10 +40,14 @@ export default function RegisterPage() {
       setError("Passwords do not match.");
       return;
     }
+    if (!acceptedTerms) {
+      setError("Please agree to the Terms of Use and Privacy Policy to continue.");
+      return;
+    }
 
     setSubmitting(true);
     try {
-      const { needsConfirmation } = await register(email, password, WELCOME_PATH);
+      const { needsConfirmation } = await register(email, password, WELCOME_PATH, captcha.token);
       if (needsConfirmation) {
         setConfirmationSentTo(email.trim());
         setSubmitting(false);
@@ -50,6 +58,7 @@ export default function RegisterPage() {
     } catch (err) {
       setError(err instanceof AuthError ? err.message : "Something went wrong. Please try again.");
       setSubmitting(false);
+      captcha.reset();
     }
   }
 
@@ -130,21 +139,45 @@ export default function RegisterPage() {
           />
         </div>
 
+        <label className="flex items-start gap-2.5 text-sm leading-snug">
+          <Checkbox
+            required
+            checked={acceptedTerms}
+            onCheckedChange={(checked) => setAcceptedTerms(checked)}
+            className="mt-0.5"
+          />
+          <span>
+            I agree to the{" "}
+            <Link
+              href="/legal/terms"
+              target="_blank"
+              className="font-semibold text-primary hover:underline"
+            >
+              Terms of Use
+            </Link>{" "}
+            and{" "}
+            <Link
+              href="/legal/privacy"
+              target="_blank"
+              className="font-semibold text-primary hover:underline"
+            >
+              Privacy Policy
+            </Link>
+          </span>
+        </label>
+
+        {captcha.widget}
         {error && <p className="text-sm text-destructive">{error}</p>}
 
         <Button
           type="submit"
           size="lg"
-          disabled={submitting}
+          disabled={submitting || !acceptedTerms || !captcha.ready}
           className="mt-2 rounded-full bg-primary hover:bg-primary/90"
         >
           <UserPlus className="h-4 w-4" />
           Create Account
         </Button>
-
-        <p className="text-center text-xs text-muted-foreground">
-          By registering you agree to our Terms of Service and Privacy Policy.
-        </p>
       </form>
     </AuthSplitLayout>
   );

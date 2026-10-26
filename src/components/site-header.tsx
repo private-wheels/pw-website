@@ -25,7 +25,9 @@ const NAV_LINKS = [
 export function SiteHeader() {
   const pathname = usePathname();
   const router = useRouter();
-  const { user, loading, logout } = useAuth();
+  const { user: authUser, loading, logout } = useAuth();
+  // A temporary account from the /list flow isn't really "signed in" yet.
+  const user = authUser?.isAnonymous ? null : authUser;
 
   async function handleSignOut() {
     await logout();

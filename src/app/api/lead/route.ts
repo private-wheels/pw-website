@@ -15,6 +15,8 @@
 interface Lead {
   name: string;
   mobile: string;
+  /** Opted in to marketing and launch updates (POPIA s69). Defaults to false. */
+  marketingConsent: boolean;
   at: string;
   source: string;
 }
@@ -49,6 +51,7 @@ export async function POST(request: Request) {
   const lead: Lead = {
     name,
     mobile,
+    marketingConsent: payload.marketingConsent === true,
     at: new Date().toISOString(),
     source: "coming-soon",
   };
@@ -123,6 +126,7 @@ async function emailLead(lead: Lead) {
           "",
           `Name:   ${lead.name}`,
           `Mobile: ${lead.mobile}`,
+          `Marketing consent: ${lead.marketingConsent ? "yes" : "no"}`,
           `When:   ${lead.at}`,
         ].join("\n"),
       }),
@@ -183,7 +187,7 @@ async function notifyWhatsApp(lead: Lead) {
         to,
         type: "text",
         text: {
-          body: `New Private Wheels lead\nName: ${lead.name}\nMobile: ${lead.mobile}`,
+          body: `New Private Wheels lead\nName: ${lead.name}\nMobile: ${lead.mobile}\nMarketing consent: ${lead.marketingConsent ? "yes" : "no"}`,
         },
       };
 
