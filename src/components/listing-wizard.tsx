@@ -8,6 +8,8 @@ import { useAuth } from "@/context/auth-context";
 import { ListingError, createListing, updateListing } from "@/lib/store/listings";
 import { PaymentError, goToCheckout } from "@/lib/store/payments";
 import { LISTING_FEE_RAND } from "@/lib/payments";
+import { publishWithoutPayment } from "@/app/actions/admin";
+import { resubmitListing } from "@/app/actions/listings";
 import { deleteListingPhotos } from "@/lib/storage";
 import { formatCurrency } from "@/lib/format";
 import type {
@@ -144,6 +146,8 @@ export function ListingWizard({
 }) {
   const router = useRouter();
   const { user, updateProfile } = useAuth();
+  const isAdmin = user?.role === "admin";
+  const resubmitting = mode === "edit" && existingListing?.status === "changes_requested";
   const [step, setStep] = useState(0);
   const [form, setForm] = useState<FormState>(() => initialForm(existingListing, user));
   const [submitting, setSubmitting] = useState(false);
@@ -232,7 +236,13 @@ export function ListingWizard({
       if (mode === "edit" && existingListing) {
         await updateListing(existingListing.id, payload);
         await deleteListingPhotos(removedSavedPhotos);
-        toast.success("Listing updated.");
+        if (resubmitting) {
+          const { ok } = await resubmitListing(existingListing.id);
+          if (ok) toast.success("Thanks! Your listing is back in review. We'll email you soon.");
+          else toast.error("Your changes are saved, but we couldn't resubmit. Please try again.");
+        } else {
+          toast.success("Listing updated.");
+        }
       } else {
         created = await createListing(payload);
       }
@@ -252,7 +262,16 @@ export function ListingWizard({
       updateProfile({ name: payload.sellerName, phone: payload.phone }).catch(() => {});
     }
 
-    // New listings go live once the listing fee is paid on Paystack.
+    // Admins publish straight away, without paying or waiting for review.
+    if (created && isAdmin) {
+      const result = await publishWithoutPayment(created.id);
+      if (result.ok) toast.success("Published.");
+      else toast.error(`Your listing is saved, but couldn't be published: ${result.error}`);
+      router.push("/dashboard");
+      return;
+    }
+
+    // Everyone else pays the listing fee on Paystack, then it goes for review.
     if (created) {
       try {
         await goToCheckout(created.id);
@@ -271,6 +290,15 @@ export function ListingWizard({
 
   return (
     <SiteContainer className="py-10">
+      {resubmitting && existingListing?.reviewNote && (
+        <div className="mb-8 rounded-xl border-l-4 border-amber-400 bg-amber-50 p-4 text-sm dark:bg-amber-950/30">
+          <p className="font-medium">What our team asked you to change</p>
+          <p className="mt-1 whitespace-pre-line">{existingListing.reviewNote}</p>
+          <p className="mt-2 text-muted-foreground">
+            Make the change, then press <strong>Save &amp; Resubmit</strong> on the last step. There&apos;s nothing more to pay.
+          </p>
+        </div>
+      )}
       {showWelcome && (
         <div className="mb-8 flex items-start gap-3 rounded-xl border border-primary/30 bg-primary/5 p-4">
           <Sparkles className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
@@ -616,12 +644,17 @@ export function ListingWizard({
                 <p className="mt-1 text-sm">{form.description}</p>
               </div>
             )}
-            {mode === "create" && (
+            {mode === "create" && !isAdmin && (
               <p className="rounded-lg border bg-muted/40 p-4 text-sm text-muted-foreground">
                 Listing your car costs a once-off{" "}
                 <span className="font-semibold text-foreground">R{LISTING_FEE_RAND}</span>. You&apos;ll
-                pay securely with Paystack next, and your listing goes live as soon as the payment
-                clears.
+                pay securely with Paystack next. Our team then reviews your listing, usually within
+                one working day, and it goes live once it&apos;s approved.
+              </p>
+            )}
+            {mode === "create" && isAdmin && (
+              <p className="rounded-lg border bg-muted/40 p-4 text-sm text-muted-foreground">
+                As an admin, your listing is published straight away. No payment or review needed.
               </p>
             )}
           </div>
@@ -654,7 +687,13 @@ export function ListingWizard({
             className="rounded-full bg-primary hover:bg-primary/90"
           >
             {submitting && <Loader2 className="h-4 w-4 animate-spin" />}
-            {mode === "edit" ? "Save Changes" : `Continue to Payment · R${LISTING_FEE_RAND}`}
+            {resubmitting
+              ? "Save & Resubmit"
+              : mode === "edit"
+                ? "Save Changes"
+                : isAdmin
+                  ? "Publish Listing"
+                  : `Continue to Payment · R${LISTING_FEE_RAND}`}
           </Button>
         )}
       </div>

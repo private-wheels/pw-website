@@ -71,7 +71,7 @@ export async function logout(): Promise<void> {
 export async function loadUser(id: string, email: string): Promise<User> {
   const { data } = await getSupabaseBrowserClient()
     .from("profiles")
-    .select("display_name, phone")
+    .select("display_name, phone, role")
     .eq("id", id)
     .maybeSingle();
 
@@ -80,6 +80,7 @@ export async function loadUser(id: string, email: string): Promise<User> {
     email,
     name: data?.display_name || email.split("@")[0],
     phone: data?.phone ?? "",
+    role: data?.role === "admin" ? "admin" : "member",
   };
 }
 

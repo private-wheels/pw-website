@@ -1,6 +1,7 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { revalidateTag } from "next/cache";
 import { LISTING_FEE_CURRENCY, type PaymentOutcome } from "@/lib/payments";
+import { notifyListing } from "@/lib/server/listing-emails";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { LISTINGS_TAG } from "@/lib/supabase/server";
 
@@ -13,8 +14,11 @@ import { LISTINGS_TAG } from "@/lib/supabase/server";
  *   2. Paystack sends the seller back to /api/paystack/callback and, separately,
  *      posts `charge.success` to /api/paystack/webhook. Both call
  *      `fulfilPayment`, which re-checks the transaction with Paystack before
- *      activating the listing, so a forged callback or replayed webhook can't
- *      publish an unpaid listing. Running it twice is harmless.
+ *      sending the listing for review, so a forged callback or replayed
+ *      webhook can't push an unpaid listing through. Running it twice is
+ *      harmless.
+ *   3. Admins approve the listing (it goes live) or reject it, which refunds
+ *      the fee through `refundPayment`.
  */
 
 const API = "https://api.paystack.co";
@@ -89,7 +93,7 @@ export function isValidWebhookSignature(rawBody: string, signature: string | nul
 
 /**
  * Checks a payment with Paystack and, if it succeeded for the right amount,
- * marks it paid and makes its listing public. Idempotent.
+ * marks it paid and sends its listing to the review queue. Idempotent.
  */
 export async function fulfilPayment(
   reference: string,
@@ -137,14 +141,73 @@ export async function fulfilPayment(
   if (paymentError) throw new Error(paymentError.message);
 
   if (payment.listing_id) {
-    const { error: listingError } = await db
+    const { data: updated, error: listingError } = await db
       .from("listings")
-      .update({ paid_at: paidAt, status: "active" })
+      .update({ paid_at: paidAt, status: "pending_review" })
       .eq("id", payment.listing_id)
-      .is("paid_at", null);
+      .is("paid_at", null)
+      .select("id");
     if (listingError) throw new Error(listingError.message);
-    revalidateTag(LISTINGS_TAG, { expire: 0 });
+    // Only the call that actually moved it (callback or webhook) emails.
+    if (updated.length > 0) {
+      revalidateTag(LISTINGS_TAG, { expire: 0 });
+      await notifyListing(payment.listing_id, { type: "received" });
+    }
   }
 
   return { outcome: "success", listingId: payment.listing_id };
+}
+
+/**
+ * Refunds a successful payment in full through Paystack. The payment shows as
+ * `refund_pending` until Paystack confirms it (`refund.processed` webhook);
+ * card refunds usually land within 5–10 working days.
+ */
+export async function refundPayment(paymentId: string, note: string): Promise<void> {
+  const db = createAdminClient();
+  const { data: payment, error } = await db
+    .from("payments")
+    .select("id, reference, status")
+    .eq("id", paymentId)
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  if (!payment) throw new Error("Payment not found.");
+  if (payment.status !== "success") {
+    throw new Error(`Only successful payments can be refunded (this one is ${payment.status}).`);
+  }
+
+  const refund = await paystack<{ status: string }>("/refund", {
+    method: "POST",
+    body: JSON.stringify({
+      transaction: payment.reference,
+      merchant_note: note.slice(0, 200),
+      customer_note: "Private Wheels listing fee refund",
+    }),
+  });
+
+  const processed = refund.status === "processed";
+  const { error: updateError } = await db
+    .from("payments")
+    .update({
+      status: processed ? "refunded" : "refund_pending",
+      refunded_at: processed ? new Date().toISOString() : null,
+      refund_note: note.slice(0, 500),
+    })
+    .eq("id", payment.id);
+  if (updateError) throw new Error(updateError.message);
+}
+
+/** Records the outcome of a refund from Paystack's `refund.*` webhooks. */
+export async function recordRefundOutcome(reference: string, processed: boolean): Promise<void> {
+  const db = createAdminClient();
+  const { error } = await db
+    .from("payments")
+    .update(
+      processed
+        ? { status: "refunded", refunded_at: new Date().toISOString() }
+        : { status: "success", refund_note: "Refund failed at Paystack. Check the Paystack dashboard." },
+    )
+    .eq("reference", reference)
+    .eq("status", "refund_pending");
+  if (error) throw new Error(error.message);
 }
