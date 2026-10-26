@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { BadgeCheck, CalendarClock, Camera, CreditCard, ShieldCheck } from "lucide-react";
 import { FOUNDING_FEE_CENTS, LISTING_FEE_CENTS, formatFee } from "@/lib/payments";
-import { isPreLaunch } from "@/lib/site";
+import { isFoundingPriceActive, isPreLaunch } from "@/lib/site";
 import { HelpCallout } from "@/components/help-callout";
 import { SiteContainer } from "@/components/site-container";
 import { Button } from "@/components/ui/button";
@@ -25,12 +25,13 @@ const STEPS = [
  */
 export default function ListYourCarPage() {
   const preLaunch = isPreLaunch();
-  const price = formatFee(preLaunch ? FOUNDING_FEE_CENTS : LISTING_FEE_CENTS);
+  const founding = isFoundingPriceActive();
+  const price = formatFee(founding ? FOUNDING_FEE_CENTS : LISTING_FEE_CENTS);
 
   return (
     <SiteContainer className="py-12 sm:py-16">
       <div className="mx-auto max-w-2xl text-center">
-        {preLaunch && (
+        {founding && (
           <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
             <CalendarClock className="h-3.5 w-3.5" />
             Founding-seller price: {price} until launch
@@ -52,7 +53,7 @@ export default function ListYourCarPage() {
             render={<Link href="/list/new">Start your listing</Link>}
           />
           <p className="text-sm text-muted-foreground">
-            {preLaunch ? (
+            {founding ? (
               <>
                 <span className="font-semibold text-foreground">{price} now</span> as a founding seller ·{" "}
                 {formatFee(LISTING_FEE_CENTS)} once we launch · No account needed to start

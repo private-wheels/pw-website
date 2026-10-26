@@ -4,7 +4,7 @@ import { randomBytes } from "node:crypto";
 import { headers } from "next/headers";
 import { isListingId } from "@/lib/listings";
 import { formatFee, listingFeeCents, type ListingFee } from "@/lib/payments";
-import { isPreLaunch } from "@/lib/site";
+import { isFoundingPriceActive } from "@/lib/site";
 import { initializeTransaction } from "@/lib/paystack";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -37,7 +37,7 @@ export async function startListingCheckout(
   if (listing.paid_at) return { error: "This listing has already been paid for." };
 
   const reference = `pw_${randomBytes(12).toString("hex")}`;
-  const amountCents = listingFeeCents(isPreLaunch());
+  const amountCents = listingFeeCents(isFoundingPriceActive());
   const { error } = await createAdminClient().from("payments").insert({
     reference,
     listing_id: listing.id,
@@ -86,7 +86,7 @@ async function siteOrigin(): Promise<string> {
 
 /** The fee a seller would pay right now (founding price before launch). */
 export async function getListingFee(): Promise<ListingFee> {
-  const founding = isPreLaunch();
+  const founding = isFoundingPriceActive();
   const cents = listingFeeCents(founding);
   return { cents, label: formatFee(cents), founding };
 }

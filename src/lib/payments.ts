@@ -2,9 +2,9 @@
  * Listing fee, shared by the client (to show it) and the server (to charge
  * it). Paystack takes amounts in the currency's smallest unit — cents for ZAR.
  *
- * Founding sellers who pay before launch pay R125 instead. The server decides which
- * price applies (see `getListingFee` / `startListingCheckout`), never the
- * browser.
+ * Founding sellers who pay before launch pay R125 instead (see
+ * `isFoundingPriceActive`). The server decides which price applies (see
+ * `getListingFee` / `startListingCheckout`), never the browser.
  */
 export const LISTING_FEE_RAND = 249;
 export const LISTING_FEE_CENTS = LISTING_FEE_RAND * 100;
