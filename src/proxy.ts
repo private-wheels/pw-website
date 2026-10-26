@@ -14,6 +14,9 @@ import { updateSession } from "@/lib/supabase/proxy";
  *   SITE_LAUNCHED=true        → gate off, the whole site is open
  *   (unset / anything else)   → gated (the safe default)
  *
+ * The policy pages under /legal stay public too, since the holding page and
+ * its lead form link to them.
+ *
  * Two ways to preview while gated (both need PREVIEW_TOKEN set):
  *   - /preview — a friendly 4-digit PIN page for demos/presentations.
  *   - opening any URL once with `?preview=<PREVIEW_TOKEN>`.
@@ -26,6 +29,7 @@ import { updateSession } from "@/lib/supabase/proxy";
 
 const COMING_SOON_PATH = "/coming-soon";
 const PREVIEW_PATH = "/preview";
+const LEGAL_PREFIX = "/legal/";
 
 export async function proxy(request: NextRequest) {
   if (process.env.SITE_LAUNCHED === "true") {
@@ -35,8 +39,12 @@ export async function proxy(request: NextRequest) {
   const { pathname, searchParams } = request.nextUrl;
   const token = process.env.PREVIEW_TOKEN;
 
-  // The holding page and the PIN-entry page are always allowed.
-  if (pathname === COMING_SOON_PATH || pathname === PREVIEW_PATH) {
+  // The holding page, the PIN-entry page and the policies are always allowed.
+  if (
+    pathname === COMING_SOON_PATH ||
+    pathname === PREVIEW_PATH ||
+    pathname.startsWith(LEGAL_PREFIX)
+  ) {
     return NextResponse.next();
   }
 
