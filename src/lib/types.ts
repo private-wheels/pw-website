@@ -91,6 +91,11 @@ export interface User {
   name: string;
   phone: string;
   role: Role;
+  /**
+   * A temporary account from the pre-launch /list flow: no email or password
+   * yet. Becomes a normal account once they add and confirm their email.
+   */
+  isAnonymous: boolean;
 }
 
 export interface FilterState {

@@ -16,9 +16,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     if (!loading && !user) {
       router.replace(`/login?next=${encodeURIComponent(pathname)}`);
     }
+    // Temporary /list accounts (e.g. back from Paystack) finish up there.
+    if (!loading && user?.isAnonymous) router.replace(`/list/done${window.location.search}`);
   }, [loading, user, router, pathname]);
 
-  if (loading || !user) {
+  if (loading || !user || user.isAnonymous) {
     return (
       <div className="flex min-h-[60vh] items-center justify-center">
         <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />

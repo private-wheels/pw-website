@@ -37,7 +37,7 @@ export async function notifyListing(listingId: string, event: ListingEvent): Pro
     if (!listing?.seller_id) return;
 
     const { data: seller } = await db.auth.admin.getUserById(listing.seller_id);
-    const to = seller.user?.email;
+    const to = seller.user?.email || seller.user?.new_email;
     const data: ListingEmailData = {
       sellerName: listing.seller_name,
       listingTitle: listingTitle(listing),

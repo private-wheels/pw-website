@@ -21,7 +21,9 @@ interface AuthContextValue {
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [account, setAccount] = useState<{ id: string; email: string } | null>(null);
+  const [account, setAccount] = useState<{ id: string; email: string; isAnonymous: boolean } | null>(
+    null,
+  );
   const [sessionChecked, setSessionChecked] = useState(!isSupabaseConfigured);
   const [user, setUser] = useState<User | null>(null);
 
@@ -32,8 +34,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const {
       data: { subscription },
     } = getSupabaseBrowserClient().auth.onAuthStateChange((_event, session) => {
-      const next = session?.user ? { id: session.user.id, email: session.user.email ?? "" } : null;
-      setAccount((prev) => (prev?.id === next?.id && prev?.email === next?.email ? prev : next));
+      const next = session?.user
+        ? {
+            id: session.user.id,
+            email: session.user.email ?? "",
+            isAnonymous: Boolean(session.user.is_anonymous),
+          }
+        : null;
+      setAccount((prev) =>
+        prev?.id === next?.id && prev?.email === next?.email && prev?.isAnonymous === next?.isAnonymous
+          ? prev
+          : next,
+      );
       setSessionChecked(true);
     });
     return () => subscription.unsubscribe();
@@ -44,7 +56,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!account) return;
     let cancelled = false;
-    authStore.loadUser(account.id, account.email).then((loaded) => {
+    authStore.loadUser(account.id, account.email, account.isAnonymous).then((loaded) => {
       if (!cancelled) setUser(loaded);
     });
     return () => {

@@ -3,7 +3,8 @@
 import { randomBytes } from "node:crypto";
 import { headers } from "next/headers";
 import { isListingId } from "@/lib/listings";
-import { LISTING_FEE_CENTS } from "@/lib/payments";
+import { formatFee, listingFeeCents, type ListingFee } from "@/lib/payments";
+import { isPreLaunch } from "@/lib/site";
 import { initializeTransaction } from "@/lib/paystack";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -21,7 +22,10 @@ export async function startListingCheckout(
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user?.email) return { error: "Please sign in again." };
+  // Anonymous sellers (the pre-launch /list flow) have a pending email until
+  // they confirm it; Paystack only needs somewhere to send the receipt.
+  const email = user?.email || user?.new_email;
+  if (!user || !email) return { error: "Please add your email address first." };
 
   // Read as the user, so RLS guarantees they own the listing.
   const { data: listing } = await supabase
@@ -33,11 +37,12 @@ export async function startListingCheckout(
   if (listing.paid_at) return { error: "This listing has already been paid for." };
 
   const reference = `pw_${randomBytes(12).toString("hex")}`;
+  const amountCents = listingFeeCents(isPreLaunch());
   const { error } = await createAdminClient().from("payments").insert({
     reference,
     listing_id: listing.id,
     seller_id: user.id,
-    amount_cents: LISTING_FEE_CENTS,
+    amount_cents: amountCents,
   });
   if (error) {
     console.error("[payments] couldn't record payment:", error.message);
@@ -46,8 +51,8 @@ export async function startListingCheckout(
 
   try {
     const { authorization_url } = await initializeTransaction({
-      email: user.email,
-      amountCents: LISTING_FEE_CENTS,
+      email,
+      amountCents,
       reference,
       callbackUrl: `${await siteOrigin()}/api/paystack/callback`,
       metadata: {
@@ -77,4 +82,11 @@ export async function startListingCheckout(
 async function siteOrigin(): Promise<string> {
   const origin = (await headers()).get("origin");
   return origin ?? process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+}
+
+/** The fee a seller would pay right now (founding price before launch). */
+export async function getListingFee(): Promise<ListingFee> {
+  const founding = isPreLaunch();
+  const cents = listingFeeCents(founding);
+  return { cents, label: formatFee(cents), founding };
 }

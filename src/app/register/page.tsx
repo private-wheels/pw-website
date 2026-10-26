@@ -7,6 +7,7 @@ import { MailCheck, UserPlus } from "lucide-react";
 import { useAuth } from "@/context/auth-context";
 import { AuthError } from "@/lib/store/auth";
 import { AuthSplitLayout } from "@/components/auth-split-layout";
+import { useTurnstile } from "@/components/turnstile";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -23,6 +24,7 @@ export default function RegisterPage() {
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [confirmationSentTo, setConfirmationSentTo] = useState<string | null>(null);
+  const captcha = useTurnstile("register");
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -39,7 +41,7 @@ export default function RegisterPage() {
 
     setSubmitting(true);
     try {
-      const { needsConfirmation } = await register(email, password, WELCOME_PATH);
+      const { needsConfirmation } = await register(email, password, WELCOME_PATH, captcha.token);
       if (needsConfirmation) {
         setConfirmationSentTo(email.trim());
         setSubmitting(false);
@@ -50,6 +52,7 @@ export default function RegisterPage() {
     } catch (err) {
       setError(err instanceof AuthError ? err.message : "Something went wrong. Please try again.");
       setSubmitting(false);
+      captcha.reset();
     }
   }
 
@@ -130,12 +133,13 @@ export default function RegisterPage() {
           />
         </div>
 
+        {captcha.widget}
         {error && <p className="text-sm text-destructive">{error}</p>}
 
         <Button
           type="submit"
           size="lg"
-          disabled={submitting}
+          disabled={submitting || !captcha.ready}
           className="mt-2 rounded-full bg-primary hover:bg-primary/90"
         >
           <UserPlus className="h-4 w-4" />

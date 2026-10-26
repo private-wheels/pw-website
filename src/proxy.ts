@@ -20,12 +20,24 @@ import { updateSession } from "@/lib/supabase/proxy";
  * Either sets a cookie so you (and only you) can browse the real site for a
  * week.
  *
+ * The sell flow stays open while gated, so sellers can list before launch
+ * from the shareable /list link: /list itself, sign-in and sign-up, email
+ * confirmation, the seller dashboard and the legal pages. The marketplace
+ * (home page, /cars, /finance…) stays behind the holding page.
+ *
  * Every request that gets through to the real site also refreshes the
  * Supabase session and guards /dashboard (see lib/supabase/proxy).
  */
 
 const COMING_SOON_PATH = "/coming-soon";
 const PREVIEW_PATH = "/preview";
+
+/** Reachable while gated: the pre-launch sell flow. */
+const OPEN_WHILE_GATED = ["/list", "/login", "/register", "/auth/confirm", "/dashboard", "/legal"];
+
+function isOpenWhileGated(pathname: string): boolean {
+  return OPEN_WHILE_GATED.some((p) => pathname === p || pathname.startsWith(`${p}/`));
+}
 
 export async function proxy(request: NextRequest) {
   if (process.env.SITE_LAUNCHED === "true") {
@@ -38,6 +50,10 @@ export async function proxy(request: NextRequest) {
   // The holding page and the PIN-entry page are always allowed.
   if (pathname === COMING_SOON_PATH || pathname === PREVIEW_PATH) {
     return NextResponse.next();
+  }
+
+  if (isOpenWhileGated(pathname)) {
+    return updateSession(request);
   }
 
   // `?preview=<token>` unlocks the real site and remembers it for a week.
