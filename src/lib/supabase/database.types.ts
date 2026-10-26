@@ -9,6 +9,11 @@ export type Database = {
     Tables: {
       listings: {
         Row: {
+          approved_at: string | null;
+          edited_at: string | null;
+          fee_waived: boolean;
+          review_note: string;
+          reviewed_by: string | null;
           accident_history: string;
           body_type: string;
           colour: string;
@@ -40,6 +45,11 @@ export type Database = {
           year: number;
         };
         Insert: {
+          approved_at?: string | null;
+          edited_at?: string | null;
+          fee_waived?: boolean;
+          review_note?: string;
+          reviewed_by?: string | null;
           accident_history: string;
           body_type: string;
           colour?: string;
@@ -71,6 +81,11 @@ export type Database = {
           year: number;
         };
         Update: {
+          approved_at?: string | null;
+          edited_at?: string | null;
+          fee_waived?: boolean;
+          review_note?: string;
+          reviewed_by?: string | null;
           accident_history?: string;
           body_type?: string;
           colour?: string;
@@ -105,6 +120,8 @@ export type Database = {
       };
       payments: {
         Row: {
+          refund_note: string;
+          refunded_at: string | null;
           amount_cents: number;
           channel: string | null;
           created_at: string;
@@ -119,6 +136,8 @@ export type Database = {
           updated_at: string;
         };
         Insert: {
+          refund_note?: string;
+          refunded_at?: string | null;
           amount_cents: number;
           channel?: string | null;
           created_at?: string;
@@ -133,6 +152,8 @@ export type Database = {
           updated_at?: string;
         };
         Update: {
+          refund_note?: string;
+          refunded_at?: string | null;
           amount_cents?: number;
           channel?: string | null;
           created_at?: string;
@@ -146,22 +167,33 @@ export type Database = {
           status?: string;
           updated_at?: string;
         };
-        Relationships: [];
+        Relationships: [
+          {
+            foreignKeyName: "payments_listing_id_fkey";
+            columns: ["listing_id"];
+            isOneToOne: false;
+            referencedRelation: "listings";
+            referencedColumns: ["id"];
+          },
+        ];
       };
       profiles: {
         Row: {
+          role: string;
           created_at: string;
           display_name: string;
           id: string;
           phone: string;
         };
         Insert: {
+          role?: string;
           created_at?: string;
           display_name?: string;
           id: string;
           phone?: string;
         };
         Update: {
+          role?: string;
           created_at?: string;
           display_name?: string;
           id?: string;

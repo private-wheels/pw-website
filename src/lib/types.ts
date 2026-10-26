@@ -32,7 +32,17 @@ export type Province =
   | "Northern Cape"
   | "Western Cape";
 
-export type ListingStatus = "pending_payment" | "active" | "paused" | "sold" | "draft";
+export type ListingStatus =
+  | "pending_payment"
+  | "pending_review"
+  | "changes_requested"
+  | "active"
+  | "paused"
+  | "sold"
+  | "rejected"
+  | "draft";
+
+export type Role = "member" | "admin";
 
 export interface Vehicle {
   id: string;
@@ -59,6 +69,8 @@ export interface Vehicle {
   images: string[];
   featured: boolean;
   status: ListingStatus;
+  /** Admin feedback shown to the seller (changes requested / rejected). */
+  reviewNote?: string;
   /** Empty for the pre-launch demo listings, which have no real seller. */
   sellerId: string;
   sellerName: string;
@@ -69,7 +81,7 @@ export interface Vehicle {
 /** What a seller submits from the listing wizard. */
 export type NewVehicleInput = Omit<
   Vehicle,
-  "id" | "sellerId" | "createdAt" | "status" | "featured" | "originalPrice"
+  "id" | "sellerId" | "createdAt" | "status" | "featured" | "originalPrice" | "reviewNote"
 >;
 
 /** The signed-in user: Supabase Auth account + their `profiles` row. */
@@ -78,6 +90,7 @@ export interface User {
   email: string;
   name: string;
   phone: string;
+  role: Role;
 }
 
 export interface FilterState {

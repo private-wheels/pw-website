@@ -4,12 +4,14 @@ import { Suspense, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
-import { CreditCard, Loader2, MoreVertical, Pause, Pencil, Play, Plus, Trash2 } from "lucide-react";
+import { CreditCard, Loader2, MoreVertical, Pause, Pencil, Play, Plus, Send, ShieldCheck, Trash2 } from "lucide-react";
 import { useAuth } from "@/context/auth-context";
 import { useUserListings } from "@/hooks/use-listings";
 import { deleteListing, setListingStatus } from "@/lib/store/listings";
 import { PaymentError, goToCheckout } from "@/lib/store/payments";
 import { LISTING_FEE_RAND } from "@/lib/payments";
+import { STATUS_STYLES, STATUS_LABELS } from "@/lib/listing-status";
+import { publishWithoutPayment } from "@/app/actions/admin";
 import type { Vehicle } from "@/lib/types";
 import { formatCurrency, formatMileage } from "@/lib/format";
 import { VehicleMedia } from "@/components/vehicle-media";
@@ -22,17 +24,16 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-const STATUS_STYLES: Record<string, string> = {
-  pending_payment: "bg-orange-100 text-orange-700",
-  active: "bg-green-100 text-green-700",
-  paused: "bg-amber-100 text-amber-700",
-  sold: "bg-slate-200 text-slate-700",
-  draft: "bg-blue-100 text-blue-700",
+/** What the seller should know or do next, per status. */
+const STATUS_HINTS: Partial<Record<Vehicle["status"], string>> = {
+  pending_payment: "Pay the listing fee to send it for review.",
+  pending_review: "We're reviewing it, usually within one working day. We'll email you.",
+  changes_requested: "Make the change below, then save to resubmit. There's nothing more to pay.",
+  rejected: "This listing wasn't approved.",
 };
 
-const STATUS_LABELS: Record<string, string> = {
-  pending_payment: "awaiting payment",
-};
+/** Seller can pause / resume / mark sold once a listing has been approved. */
+const MANAGEABLE = new Set<Vehicle["status"]>(["active", "paused", "sold"]);
 
 /**
  * Shows the result of a Paystack checkout once, then tidies the URL. Paystack
@@ -49,10 +50,10 @@ function PaymentOutcomeToast({ onPaid }: { onPaid: () => void }) {
     if (!outcome || shown.current) return;
     shown.current = true;
     if (outcome === "success") {
-      toast.success("Payment received. Your listing is live!");
+      toast.success("Payment received! We're reviewing your listing and will email you soon.");
       onPaid();
     } else if (outcome === "pending") {
-      toast.info("We're still confirming your payment. Your listing will go live shortly.");
+      toast.info("We're still confirming your payment. Your listing will move to review shortly.");
     } else {
       toast.error("Your payment didn't go through. You can try again from your listing.");
     }
@@ -66,6 +67,7 @@ export default function DashboardPage() {
   const { user } = useAuth();
   const { listings, loading, error, reload } = useUserListings(user?.id);
   const [payingId, setPayingId] = useState<string | null>(null);
+  const isAdmin = user?.role === "admin";
 
   const activeCount = listings.filter((l) => l.status === "active").length;
   const totalValue = listings
@@ -85,6 +87,17 @@ export default function DashboardPage() {
 
   async function handlePay(listing: Vehicle) {
     setPayingId(listing.id);
+    if (isAdmin) {
+      const result = await publishWithoutPayment(listing.id);
+      setPayingId(null);
+      if (result.ok) {
+        toast.success("Published.");
+        await reload();
+      } else {
+        toast.error(result.error);
+      }
+      return;
+    }
     try {
       await goToCheckout(listing.id);
     } catch (err) {
@@ -120,15 +133,29 @@ export default function DashboardPage() {
           </h1>
           <p className="text-muted-foreground">Manage your vehicle listings.</p>
         </div>
-        <Button
-          className="rounded-full bg-primary hover:bg-primary/90"
-          render={
-            <Link href="/dashboard/listings/new">
-              <Plus className="h-4 w-4" />
-              Create New Listing
-            </Link>
-          }
-        />
+        <div className="flex flex-wrap gap-2">
+          {isAdmin && (
+            <Button
+              variant="outline"
+              className="rounded-full"
+              render={
+                <Link href="/dashboard/admin">
+                  <ShieldCheck className="h-4 w-4" />
+                  Admin
+                </Link>
+              }
+            />
+          )}
+          <Button
+            className="rounded-full bg-primary hover:bg-primary/90"
+            render={
+              <Link href="/dashboard/listings/new">
+                <Plus className="h-4 w-4" />
+                Create New Listing
+              </Link>
+            }
+          />
+        </div>
       </div>
 
       <div className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-3">
@@ -189,7 +216,7 @@ export default function DashboardPage() {
               </div>
 
               <div className="flex-1">
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                   <p className="font-semibold">
                     {listing.year} {listing.make} {listing.model} {listing.variant}
                   </p>
@@ -201,6 +228,15 @@ export default function DashboardPage() {
                   {formatCurrency(listing.price)} · {formatMileage(listing.mileage)} ·{" "}
                   {listing.town}, {listing.province}
                 </p>
+                {STATUS_HINTS[listing.status] && !(isAdmin && listing.status === "pending_payment") && (
+                  <p className="mt-1 text-xs text-muted-foreground">{STATUS_HINTS[listing.status]}</p>
+                )}
+                {listing.reviewNote &&
+                  (listing.status === "changes_requested" || listing.status === "rejected") && (
+                    <p className="mt-2 rounded-lg border-l-4 border-amber-400 bg-amber-50 px-3 py-2 text-sm whitespace-pre-line text-amber-950 dark:bg-amber-950/30 dark:text-amber-100">
+                      {listing.reviewNote}
+                    </p>
+                  )}
               </div>
 
               <div className="flex items-center gap-2">
@@ -213,22 +249,26 @@ export default function DashboardPage() {
                   >
                     {payingId === listing.id ? (
                       <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    ) : isAdmin ? (
+                      <Send className="h-3.5 w-3.5" />
                     ) : (
                       <CreditCard className="h-3.5 w-3.5" />
                     )}
-                    Pay R{LISTING_FEE_RAND}
+                    {isAdmin ? "Publish" : `Pay R${LISTING_FEE_RAND}`}
                   </Button>
                 )}
-                <Button
-                  variant="outline"
-                  size="sm"
-                  render={
-                    <Link href={`/dashboard/listings/${listing.id}/edit`}>
-                      <Pencil className="h-3.5 w-3.5" />
-                      Edit
-                    </Link>
-                  }
-                />
+                {listing.status !== "rejected" && (
+                  <Button
+                    variant={listing.status === "changes_requested" ? "default" : "outline"}
+                    size="sm"
+                    render={
+                      <Link href={`/dashboard/listings/${listing.id}/edit`}>
+                        <Pencil className="h-3.5 w-3.5" />
+                        {listing.status === "changes_requested" ? "Edit & resubmit" : "Edit"}
+                      </Link>
+                    }
+                  />
+                )}
                 <DropdownMenu>
                   <DropdownMenuTrigger
                     render={
@@ -238,7 +278,7 @@ export default function DashboardPage() {
                     }
                   />
                   <DropdownMenuContent align="end">
-                    {listing.status !== "pending_payment" && (
+                    {MANAGEABLE.has(listing.status) && (
                       <DropdownMenuItem onClick={() => void handleToggleStatus(listing)}>
                         {listing.status === "active" ? (
                           <>

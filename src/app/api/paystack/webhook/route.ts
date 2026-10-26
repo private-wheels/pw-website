@@ -1,10 +1,10 @@
 import type { NextRequest } from "next/server";
-import { fulfilPayment, isValidWebhookSignature } from "@/lib/paystack";
+import { fulfilPayment, isValidWebhookSignature, recordRefundOutcome } from "@/lib/paystack";
 
 /**
  * Paystack webhook — set this URL under Settings → API Keys & Webhooks in the
- * Paystack dashboard. Only `charge.success` matters; anything else is
- * acknowledged and ignored. A non-2xx response makes Paystack retry, so we
+ * Paystack dashboard. Handles `charge.success` and the refund outcomes;
+ * anything else is acknowledged and ignored. A non-2xx response makes Paystack retry, so we
  * only return one when fulfilling actually failed.
  */
 export async function POST(request: NextRequest) {
@@ -13,14 +13,25 @@ export async function POST(request: NextRequest) {
     return new Response("Invalid signature", { status: 401 });
   }
 
-  const event = JSON.parse(rawBody) as { event: string; data?: { reference?: string } };
-  if (event.event === "charge.success" && event.data?.reference) {
-    try {
+  const event = JSON.parse(rawBody) as {
+    event: string;
+    data?: {
+      reference?: string;
+      transaction_reference?: string;
+      transaction?: { reference?: string };
+    };
+  };
+
+  try {
+    if (event.event === "charge.success" && event.data?.reference) {
       await fulfilPayment(event.data.reference);
-    } catch (err) {
-      console.error("[paystack webhook]", err);
-      return new Response("Couldn't record payment", { status: 500 });
+    } else if (event.event === "refund.processed" || event.event === "refund.failed") {
+      const reference = event.data?.transaction_reference ?? event.data?.transaction?.reference;
+      if (reference) await recordRefundOutcome(reference, event.event === "refund.processed");
     }
+  } catch (err) {
+    console.error("[paystack webhook]", err);
+    return new Response("Couldn't record event", { status: 500 });
   }
 
   return new Response(null, { status: 200 });

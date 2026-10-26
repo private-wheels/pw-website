@@ -43,6 +43,7 @@ export function rowToVehicle(row: ListingRow): Vehicle {
     images: row.images,
     featured: row.featured,
     status: row.status as ListingStatus,
+    reviewNote: row.review_note,
     sellerId: row.seller_id ?? "",
     sellerName: row.seller_name,
     phone: row.seller_phone,
@@ -53,7 +54,21 @@ export function rowToVehicle(row: ListingRow): Vehicle {
 /** Columns a seller may write — matches the column GRANTs on the table. */
 export function vehicleInputToRow(
   input: NewVehicleInput,
-): Omit<ListingInsert, "id" | "seller_id" | "featured" | "original_price" | "created_at" | "updated_at"> {
+): Omit<
+  ListingInsert,
+  | "id"
+  | "seller_id"
+  | "featured"
+  | "original_price"
+  | "created_at"
+  | "updated_at"
+  | "paid_at"
+  | "approved_at"
+  | "reviewed_by"
+  | "review_note"
+  | "edited_at"
+  | "fee_waived"
+> {
   return {
     seller_name: input.sellerName,
     seller_phone: input.phone,
