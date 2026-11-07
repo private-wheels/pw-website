@@ -11,11 +11,12 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 /**
  * Starts Paystack checkout for one of the signed-in seller's unpaid listings.
- * Returns the hosted checkout URL for the browser to open.
+ * Returns the hosted checkout URL for the browser to open, or asks for
+ * identity verification first.
  */
 export async function startListingCheckout(
   listingId: string,
-): Promise<{ url: string } | { error: string }> {
+): Promise<{ url: string } | { error: string; needsVerification?: true }> {
   if (!isListingId(listingId)) return { error: "Listing not found." };
 
   const supabase = await createSupabaseServerClient();
@@ -35,6 +36,16 @@ export async function startListingCheckout(
     .maybeSingle();
   if (!listing || listing.seller_id !== user.id) return { error: "Listing not found." };
   if (listing.paid_at) return { error: "This listing has already been paid for." };
+
+  // Sellers verify their identity (Smile ID) before they can pay.
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("identity_status")
+    .eq("id", user.id)
+    .maybeSingle();
+  if (profile?.identity_status !== "verified") {
+    return { error: "Please verify your identity before paying.", needsVerification: true };
+  }
 
   const reference = `pw_${randomBytes(12).toString("hex")}`;
   const amountCents = listingFeeCents(isFoundingPriceActive());

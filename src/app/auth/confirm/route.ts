@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import type { EmailOtpType } from "@supabase/supabase-js";
+import { AFTER_SIGN_IN_PATH } from "@/lib/identity";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 /**
@@ -32,5 +33,5 @@ export async function GET(request: NextRequest) {
 
 /** Only same-site paths — never redirect to another host. */
 function safeNext(next: string | null): string {
-  return next && next.startsWith("/") && !next.startsWith("//") ? next : "/dashboard";
+  return next && next.startsWith("/") && !next.startsWith("//") ? next : AFTER_SIGN_IN_PATH;
 }

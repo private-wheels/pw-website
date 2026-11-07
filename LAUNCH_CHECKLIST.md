@@ -38,3 +38,49 @@ in Vercel). Tick them off as they're done.
       Their photos are static files in `public/listings/` (not in Storage), so
       nothing else needs cleaning up. Optionally remove
       `public/listings/bmw-x1-sdrive18d/` afterwards.
+
+## Smile ID (identity verification)
+
+Sellers can't pay for a listing until they're verified, so this must be live
+before anyone can list (including founding sellers on the `/list` link).
+Do these **in this order**: merging the `smileid-verification` branch before
+steps 1–3 means nobody can verify, so nobody can pay.
+
+- [x] **1. Apply the database migrations** (done 7 Nov 2026; local dev and
+      the live site share one database):
+      `20261107090000_identity_verification.sql`,
+      `20261107120000_profiles_first_name.sql`,
+      `20261107150000_keep_identity_checks.sql`.
+- [ ] **2. Production credentials.** Smile ID portal → Developers → Security
+      Settings → switch to Production → Create Credential. Then in Vercel →
+      Settings → Environment Variables:
+
+      | Variable | Production | Preview |
+      |---|---|---|
+      | `SMILE_ID_PARTNER_ID` | your partner number | your partner number |
+      | `SMILE_ID_API_KEY` | **production** key (mark *Sensitive*) | **sandbox** key |
+      | `SMILE_ID_ENV` | `production` | `sandbox` |
+      | `SMILE_ID_CALLBACK_URL` | leave unset | `https://www.private-wheels.co.za/api/smileid/webhook` (or unset) |
+
+      Preview stays on sandbox so testing a preview link never spends wallet
+      money. Development needs nothing (local dev reads `.env.local`).
+- [ ] **3. Production callback URL.** Same portal page → Callback URLs →
+      Production → add `https://www.private-wheels.co.za/api/smileid/webhook`.
+      Add the same URL under Sandbox too, for preview deployments.
+- [ ] **4. Merge `smileid-verification`.** Vercel redeploys with the new
+      variables.
+- [ ] **Wallet balance.** Each check costs $1.30 (Biometric KYC, SA ID). Top up
+      before launch and keep an eye on it; checks fail when the wallet is empty.
+- [ ] **Test it once for real** with your own ID on the live site, then check
+      `/dashboard/admin/verifications`.
+
+## Paystack receipts and the Finance page
+
+- [ ] **Turn on payment receipts for sellers.** Paystack dashboard → Settings
+      → Preferences → enable emailing receipts to customers. That's the
+      seller's proof of payment (we don't issue our own invoices yet).
+- [ ] **Check the Finance page against Paystack** after the first live
+      payments: open a row's "Paystack" link and confirm it lands on that
+      transaction, and that "Waiting at Paystack" matches the dashboard.
+- [ ] **Update the Smile ID estimate if prices change.** `SMILE_CHECK_COST_USD`
+      and `APPROX_ZAR_PER_USD` in `src/lib/server/finance-report.ts`.

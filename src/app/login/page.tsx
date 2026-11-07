@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { LogIn } from "lucide-react";
 import { useAuth } from "@/context/auth-context";
+import { AFTER_SIGN_IN_PATH } from "@/lib/identity";
 import { AuthError } from "@/lib/store/auth";
 import { AuthSplitLayout } from "@/components/auth-split-layout";
 import { useTurnstile } from "@/components/turnstile";
@@ -20,9 +21,12 @@ export default function LoginPage() {
   );
 }
 
-/** Only same-site paths, so `?next=` can't send people to another host. */
+/**
+ * Only same-site paths, so `?next=` can't send people to another host.
+ * Without one, unverified sellers are asked to verify first.
+ */
 function safeNext(next: string | null): string {
-  return next && next.startsWith("/") && !next.startsWith("//") ? next : "/dashboard";
+  return next && next.startsWith("/") && !next.startsWith("//") ? next : AFTER_SIGN_IN_PATH;
 }
 
 function LoginForm() {

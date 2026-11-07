@@ -1,7 +1,12 @@
 import { getAdmin } from "@/lib/server/admin";
 import {
+  adminIdentityReviewEmail,
   adminReviewNeededEmail,
   changesRequestedEmail,
+  identityFailedEmail,
+  identityInReviewEmail,
+  identityRetryEmail,
+  identityVerifiedEmail,
   listingApprovedEmail,
   listingReceivedEmail,
   listingRejectedEmail,
@@ -15,7 +20,7 @@ const SAMPLE = {
   listingId: "00000000-0000-0000-0000-000000000000",
 };
 
-/** Every email the site sends about a listing, with sample data. */
+/** Every email the site sends about a listing or ID check, with sample data. */
 export default async function AdminEmailsPage() {
   if (!(await getAdmin())) return null;
 
@@ -41,6 +46,11 @@ export default async function AdminEmailsPage() {
       }),
     },
     { to: "Admins, new listing to review", email: adminReviewNeededEmail(SAMPLE) },
+    { to: "Seller, ID verified (slow check or after review)", email: identityVerifiedEmail({ name: SAMPLE.sellerName }) },
+    { to: "Seller, ID check flagged for review", email: identityInReviewEmail({ name: SAMPLE.sellerName }) },
+    { to: "Seller, ID check failed (can retry)", email: identityRetryEmail({ name: SAMPLE.sellerName }) },
+    { to: "Seller, ID check failed (no retries left)", email: identityFailedEmail({ name: SAMPLE.sellerName }) },
+    { to: "Admins, ID check to review", email: adminIdentityReviewEmail({ email: "thandiwe@example.com" }) },
   ];
 
   return (

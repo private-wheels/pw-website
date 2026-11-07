@@ -38,7 +38,7 @@ function message(err: unknown): string {
  * Between the wizard and Paystack for /list sellers. A temporary account
  * either adds an email (becoming a real account) or signs in to an existing
  * one, which takes the listing with it. Admins then publish for free;
- * everyone else pays.
+ * everyone else verifies their identity (if they haven't yet) and pays.
  */
 function AccountStep() {
   const router = useRouter();
@@ -138,10 +138,12 @@ function AccountStep() {
       <p className="mt-2 text-sm text-muted-foreground">
         <span className="font-medium text-foreground">{title}</span> is saved.{" "}
         {user.isAnonymous
-          ? "Add your email so we can tell you when it's approved, then pay the once-off listing fee."
+          ? "Add your email so we can tell you when it's approved. Then you'll verify your identity and pay the once-off listing fee."
           : user.role === "admin"
             ? "As an admin, you can publish it straight away."
-            : "Pay the once-off listing fee and we'll review it."}
+            : user.identityStatus === "verified"
+              ? "Pay the once-off listing fee and we'll review it."
+              : "Verify your identity, then pay the once-off listing fee and we'll review it."}
       </p>
 
       <div className="mt-6 rounded-2xl border bg-card p-5">
@@ -153,7 +155,11 @@ function AccountStep() {
             onClick={() => void run(() => payOrPublish(user.role === "admin"))}
           >
             {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : user.role === "admin" ? <Send className="h-4 w-4" /> : <CreditCard className="h-4 w-4" />}
-            {user.role === "admin" ? "Publish listing" : `Pay ${fee.label}`}
+            {user.role === "admin"
+              ? "Publish listing"
+              : user.identityStatus === "verified"
+                ? `Pay ${fee.label}`
+                : "Continue"}
           </Button>
         ) : (
           <>
@@ -214,8 +220,8 @@ function AccountStep() {
                   disabled={busy || !agreed}
                   className="rounded-full bg-primary hover:bg-primary/90"
                 >
-                  {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <CreditCard className="h-4 w-4" />}
-                  Continue to payment · {fee.label}
+                  {busy && <Loader2 className="h-4 w-4 animate-spin" />}
+                  Continue
                 </Button>
               </form>
             ) : (

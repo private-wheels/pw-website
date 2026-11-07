@@ -4,7 +4,7 @@ import { Suspense, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
-import { CreditCard, Loader2, MoreVertical, Pause, Pencil, Play, Plus, Send, ShieldCheck, Trash2 } from "lucide-react";
+import { BadgeCheck, CreditCard, Loader2, MoreVertical, Pause, Pencil, Play, Plus, ScanFace, Send, ShieldCheck, Trash2 } from "lucide-react";
 import { useAuth } from "@/context/auth-context";
 import { useUserListings } from "@/hooks/use-listings";
 import { deleteListing, setListingStatus } from "@/lib/store/listings";
@@ -15,6 +15,7 @@ import { publishWithoutPayment } from "@/app/actions/admin";
 import type { Vehicle } from "@/lib/types";
 import { formatCurrency, formatMileage } from "@/lib/format";
 import { VehicleMedia } from "@/components/vehicle-media";
+import { DeleteAccountSection } from "@/components/delete-account-dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -26,7 +27,7 @@ import {
 
 /** What the seller should know or do next, per status. */
 const STATUS_HINTS: Partial<Record<Vehicle["status"], string>> = {
-  pending_payment: "Pay the listing fee to send it for review.",
+  pending_payment: "Pay the listing fee to send it for review. You'll verify your identity first if you haven't yet.",
   pending_review: "We're reviewing it, usually within one working day. We'll email you.",
   changes_requested: "Make the change below, then save to resubmit. There's nothing more to pay.",
   rejected: "This listing wasn't approved.",
@@ -129,9 +130,17 @@ export default function DashboardPage() {
       </Suspense>
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">
-            Welcome back{user ? `, ${user.name}` : ""}
-          </h1>
+          <div className="flex flex-wrap items-center gap-2">
+            <h1 className="text-2xl font-semibold tracking-tight">
+              Welcome back{user ? `, ${user.firstName || user.name}` : ""}
+            </h1>
+            {user?.identityStatus === "verified" && (
+              <Badge variant="secondary" className="gap-1 bg-green-100 text-green-700">
+                <BadgeCheck className="h-3.5 w-3.5" />
+                Verified
+              </Badge>
+            )}
+          </div>
           <p className="text-muted-foreground">Manage your vehicle listings.</p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -175,6 +184,8 @@ export default function DashboardPage() {
           <p className="text-xs text-muted-foreground uppercase">Active Listing Value</p>
         </div>
       </div>
+
+      {user && !isAdmin && <IdentityBanner status={user.identityStatus} />}
 
       <h2 className="mt-10 text-lg font-semibold">Your Listings</h2>
 
@@ -304,6 +315,30 @@ export default function DashboardPage() {
             </div>
           ))}
         </div>
+      )}
+
+      {user && !isAdmin && !loading && (
+        <DeleteAccountSection listings={listings} verified={user.identityStatus === "verified"} />
+      )}
+    </div>
+  );
+}
+
+/** Prompts sellers who haven't verified their identity yet (needed to pay). */
+function IdentityBanner({ status }: { status: NonNullable<ReturnType<typeof useAuth>["user"]>["identityStatus"] }) {
+  if (status === "verified") return null;
+  const copy = {
+    unverified: "Verify your identity before you pay for a listing. It takes about two minutes and you only do it once.",
+    pending: "We're checking your ID. We'll email you as soon as it's done.",
+    review: "Our team is reviewing your identity check, usually within one working day. We'll email you.",
+    failed: "We couldn't verify your identity. Email hello@private-wheels.co.za and we'll help.",
+  }[status];
+  return (
+    <div className="mt-6 flex flex-col gap-3 rounded-2xl border border-primary/30 bg-primary/5 p-4 sm:flex-row sm:items-center">
+      <ScanFace className="h-5 w-5 shrink-0 text-primary" />
+      <p className="flex-1 text-sm">{copy}</p>
+      {status === "unverified" && (
+        <Button size="sm" className="bg-primary hover:bg-primary/90" render={<Link href="/list/verify">Verify now</Link>} />
       )}
     </div>
   );

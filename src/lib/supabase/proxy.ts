@@ -4,7 +4,7 @@ import type { Database } from "@/lib/supabase/database.types";
 import { SUPABASE_PUBLISHABLE_KEY, SUPABASE_URL, isSupabaseConfigured } from "@/lib/supabase/env";
 
 /** Pages that need a signed-in user. */
-const PROTECTED_PREFIXES = ["/dashboard"];
+const PROTECTED_PREFIXES = ["/dashboard", "/list/verify"];
 
 /**
  * Refreshes the Supabase session cookie on every page request (so Server

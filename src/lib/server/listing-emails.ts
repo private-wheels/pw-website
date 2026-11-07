@@ -36,16 +36,22 @@ export async function notifyListing(listingId: string, event: ListingEvent): Pro
       .maybeSingle();
     if (!listing?.seller_id) return;
 
-    const { data: seller } = await db.auth.admin.getUserById(listing.seller_id);
+    const [{ data: seller }, { data: profile }] = await Promise.all([
+      db.auth.admin.getUserById(listing.seller_id),
+      db.from("profiles").select("first_name").eq("id", listing.seller_id).maybeSingle(),
+    ]);
     const to = seller.user?.email || seller.user?.new_email;
     const data: ListingEmailData = {
       sellerName: listing.seller_name,
       listingTitle: listingTitle(listing),
       listingId: listing.id,
     };
+    // Seller emails greet them by the first name they registered with; the
+    // admin alert keeps the name on the listing.
+    const toSeller: ListingEmailData = { ...data, sellerName: profile?.first_name || listing.seller_name };
 
     if (event.type === "received") {
-      if (to) await sendEmail(to, listingReceivedEmail({ ...data, resubmitted: event.resubmitted }));
+      if (to) await sendEmail(to, listingReceivedEmail({ ...toSeller, resubmitted: event.resubmitted }));
       await sendEmail(
         adminNotifyRecipients(),
         adminReviewNeededEmail({ ...data, resubmitted: event.resubmitted }),
@@ -54,13 +60,13 @@ export async function notifyListing(listingId: string, event: ListingEvent): Pro
     }
     if (!to) return;
     if (event.type === "approved") {
-      await sendEmail(to, listingApprovedEmail({ ...data, preLaunch: isPreLaunch() }));
+      await sendEmail(to, listingApprovedEmail({ ...toSeller, preLaunch: isPreLaunch() }));
     } else if (event.type === "changes_requested") {
-      await sendEmail(to, changesRequestedEmail({ ...data, note: event.note }));
+      await sendEmail(to, changesRequestedEmail({ ...toSeller, note: event.note }));
     } else {
       await sendEmail(
         to,
-        listingRejectedEmail({ ...data, note: event.note, refund: event.refund, amount: event.amount }),
+        listingRejectedEmail({ ...toSeller, note: event.note, refund: event.refund, amount: event.amount }),
       );
     }
   } catch (err) {

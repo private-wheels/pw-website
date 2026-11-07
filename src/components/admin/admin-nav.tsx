@@ -7,7 +7,8 @@ import { cn } from "@/lib/utils";
 const LINKS = [
   { href: "/dashboard/admin", label: "Review queue" },
   { href: "/dashboard/admin/listings", label: "All listings" },
-  { href: "/dashboard/admin/payments", label: "Payments" },
+  { href: "/dashboard/admin/verifications", label: "ID checks" },
+  { href: "/dashboard/admin/finance", label: "Finance" },
   { href: "/dashboard/admin/members", label: "Members" },
   { href: "/dashboard/admin/refunds", label: "Refund guide" },
   { href: "/dashboard/admin/emails", label: "Emails" },

@@ -221,3 +221,99 @@ export function adminReviewNeededEmail(d: ListingEmailData & { resubmitted?: boo
     }),
   };
 }
+
+// ---------------------------------------------------------------------------
+// Identity verification (Smile ID). The verify page shows quick results
+// itself; these go out when a check took longer than usual or needed review.
+// ---------------------------------------------------------------------------
+
+type IdentityEmailData = { name: string };
+
+const VERIFY_PAGE = () => `${siteUrl()}/list/verify`;
+
+export function identityVerifiedEmail(d: IdentityEmailData): Email {
+  return {
+    subject: "You're verified on Private Wheels",
+    ...render({
+      preheader: "Your identity check is complete. You can pay for your listing now.",
+      heading: "You're verified",
+      greeting: hello(d.name),
+      blocks: [
+        { p: "Your identity check is complete and your Private Wheels account is verified." },
+        { p: "You can now pay for your listing and send it to our team for review." },
+        { button: "Continue", href: VERIFY_PAGE() },
+      ],
+    }),
+  };
+}
+
+export function identityInReviewEmail(d: IdentityEmailData): Email {
+  return {
+    subject: "We're reviewing your identity check",
+    ...render({
+      preheader: "Our team is taking a quick look, usually within one working day.",
+      heading: "We're taking a closer look",
+      greeting: hello(d.name),
+      blocks: [
+        {
+          p: "Your identity check needs a quick manual review by our team. This usually takes less than one working day, and there's nothing you need to do.",
+        },
+        { p: "We'll email you as soon as it's done, and then you can pay for your listing." },
+      ],
+    }),
+  };
+}
+
+export function identityRetryEmail(d: IdentityEmailData): Email {
+  return {
+    subject: "Please try your identity check again",
+    ...render({
+      preheader: "Your identity check didn't go through. You can try again.",
+      heading: "Let's try that again",
+      greeting: hello(d.name),
+      blocks: [
+        {
+          p: "We couldn't complete your identity check. This is often down to the selfie, such as poor lighting or something covering your face.",
+        },
+        {
+          p: "Find a well-lit spot, remove hats or glasses, and make sure your ID number is entered exactly as it appears on your ID.",
+        },
+        { button: "Try again", href: VERIFY_PAGE() },
+      ],
+    }),
+  };
+}
+
+export function identityFailedEmail(d: IdentityEmailData): Email {
+  return {
+    subject: "We couldn't verify your identity",
+    ...render({
+      preheader: "Get in touch and we'll help you get verified.",
+      heading: "We couldn't verify your identity",
+      greeting: hello(d.name),
+      blocks: [
+        { p: "Unfortunately we weren't able to verify your identity, so we can't publish listings on your account yet." },
+        {
+          p: `If you think this is a mistake or you're having trouble, reply to this email or write to ${SUPPORT_EMAIL} and we'll help.`,
+        },
+      ],
+    }),
+  };
+}
+
+/** To admins: Smile ID flagged a check for a manual decision. */
+export function adminIdentityReviewEmail(d: { email: string }): Email {
+  return {
+    subject: `Identity check to review: ${d.email}`,
+    ...render({
+      preheader: "Smile ID flagged a seller's identity check for review.",
+      heading: "An identity check needs review",
+      blocks: [
+        {
+          p: `Smile ID flagged the identity check for ${d.email} as medium risk. They can't pay for a listing until you approve or reject it.`,
+        },
+        { button: "Review it", href: `${siteUrl()}/dashboard/admin/verifications` },
+      ],
+    }),
+  };
+}
