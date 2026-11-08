@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { MailCheck, UserPlus } from "lucide-react";
 import { useAuth } from "@/context/auth-context";
+import { AFTER_SIGN_IN_PATH } from "@/lib/identity";
 import { AuthError } from "@/lib/store/auth";
 import { AuthSplitLayout } from "@/components/auth-split-layout";
 import { useTurnstile } from "@/components/turnstile";
@@ -13,12 +14,16 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
-/** Where new sellers land once signed in: the listing wizard, with a welcome note. */
-const WELCOME_PATH = "/dashboard/listings/new?welcome=1";
+/**
+ * Where new sellers land once signed in (including from the confirmation
+ * email): identity verification, which they can skip, then the dashboard.
+ */
+const WELCOME_PATH = AFTER_SIGN_IN_PATH;
 
 export default function RegisterPage() {
   const router = useRouter();
   const { register } = useAuth();
+  const [firstName, setFirstName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -32,6 +37,10 @@ export default function RegisterPage() {
     e.preventDefault();
     setError(null);
 
+    if (!firstName.trim()) {
+      setError("Please enter your first name.");
+      return;
+    }
     if (password.length < 8) {
       setError("Password must be at least 8 characters.");
       return;
@@ -47,7 +56,7 @@ export default function RegisterPage() {
 
     setSubmitting(true);
     try {
-      const { needsConfirmation } = await register(email, password, WELCOME_PATH, captcha.token);
+      const { needsConfirmation } = await register(email, password, firstName, WELCOME_PATH, captcha.token);
       if (needsConfirmation) {
         setConfirmationSentTo(email.trim());
         setSubmitting(false);
@@ -105,6 +114,18 @@ export default function RegisterPage() {
       }
     >
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="first-name">First Name</Label>
+          <Input
+            id="first-name"
+            required
+            autoComplete="given-name"
+            maxLength={50}
+            placeholder="e.g. Thandiwe"
+            value={firstName}
+            onChange={(e) => setFirstName(e.target.value)}
+          />
+        </div>
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="email">Email Address</Label>
           <Input

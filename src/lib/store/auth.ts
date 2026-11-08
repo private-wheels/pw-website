@@ -50,6 +50,7 @@ export async function login(email: string, password: string, captchaToken?: stri
 export async function register(
   email: string,
   password: string,
+  firstName: string,
   next: string,
   captchaToken?: string,
 ): Promise<{ needsConfirmation: boolean }> {
@@ -57,7 +58,8 @@ export async function register(
   const { data, error } = await getSupabaseBrowserClient().auth.signUp({
     email: email.trim(),
     password,
-    options: { emailRedirectTo, captchaToken },
+    // Copied onto the profile by the new-user trigger.
+    options: { emailRedirectTo, captchaToken, data: { first_name: firstName.trim() } },
   });
   if (error) throw new AuthError(friendlyMessage(error));
 
@@ -115,7 +117,7 @@ export async function logout(): Promise<void> {
 export async function loadUser(id: string, email: string, isAnonymous = false): Promise<User> {
   const { data } = await getSupabaseBrowserClient()
     .from("profiles")
-    .select("display_name, phone, role")
+    .select("display_name, first_name, phone, role, identity_status")
     .eq("id", id)
     .maybeSingle();
 
@@ -123,9 +125,11 @@ export async function loadUser(id: string, email: string, isAnonymous = false): 
     id,
     email,
     name: data?.display_name || email.split("@")[0] || "",
+    firstName: data?.first_name ?? "",
     phone: data?.phone ?? "",
     role: data?.role === "admin" ? "admin" : "member",
     isAnonymous,
+    identityStatus: (data?.identity_status ?? "unverified") as User["identityStatus"],
   };
 }
 

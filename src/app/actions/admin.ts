@@ -3,6 +3,7 @@
 import { updateTag } from "next/cache";
 import { isListingId } from "@/lib/listings";
 import { refundPayment } from "@/lib/paystack";
+import { decideReview } from "@/lib/smileid";
 import { getAdmin } from "@/lib/server/admin";
 import { notifyListing } from "@/lib/server/listing-emails";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -175,4 +176,21 @@ export async function publishWithoutPayment(id: string): Promise<Result> {
 
   updateTag(LISTINGS_TAG);
   return { ok: true };
+}
+
+/**
+ * Approve or reject an identity check Smile ID flagged for review
+ * (`attention`). Approving lets the seller pay for listings.
+ */
+export async function decideIdentityReview(userId: string, approve: boolean): Promise<Result> {
+  const admin = await getAdmin();
+  if (!admin) return NOT_ADMIN;
+  // Account IDs are UUIDs too.
+  if (!isListingId(userId)) return { ok: false, error: "Member not found." };
+  try {
+    const decided = await decideReview(userId, approve, admin.id);
+    return decided ? { ok: true } : { ok: false, error: "There's no identity check awaiting review for this member." };
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : "Couldn't save the decision." };
+  }
 }

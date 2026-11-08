@@ -117,4 +117,8 @@ Paystack test card: `4084 0840 8408 4081`, any future expiry, CVV `408`.
 
 ## Later
 
-- [ ] Smile ID seller verification (waiting on their team)
+- [ ] **Smile ID to production.** Testing runs on the sandbox key. Before
+      launch: Vercel `SMILE_ID_API_KEY` = production key, `SMILE_ID_ENV=production`,
+      and add `https://www.private-wheels.co.za/api/smileid/webhook` under
+      Production callback URLs in the Smile ID portal. Then one real check with
+      your own ID.

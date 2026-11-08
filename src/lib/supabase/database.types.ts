@@ -118,6 +118,48 @@ export type Database = {
         };
         Relationships: [];
       };
+      identity_verifications: {
+        Row: {
+          id: string;
+          user_id: string | null;
+          job_id: string | null;
+          status: string;
+          reason: string | null;
+          review_decision: string | null;
+          reviewed_by: string | null;
+          reviewed_at: string | null;
+          created_at: string;
+          submitted_at: string | null;
+          completed_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          user_id?: string | null;
+          job_id?: string | null;
+          status?: string;
+          reason?: string | null;
+          review_decision?: string | null;
+          reviewed_by?: string | null;
+          reviewed_at?: string | null;
+          created_at?: string;
+          submitted_at?: string | null;
+          completed_at?: string | null;
+        };
+        Update: {
+          id?: string;
+          user_id?: string | null;
+          job_id?: string | null;
+          status?: string;
+          reason?: string | null;
+          review_decision?: string | null;
+          reviewed_by?: string | null;
+          reviewed_at?: string | null;
+          created_at?: string;
+          submitted_at?: string | null;
+          completed_at?: string | null;
+        };
+        Relationships: [];
+      };
       payments: {
         Row: {
           refund_note: string;
@@ -182,21 +224,30 @@ export type Database = {
           role: string;
           created_at: string;
           display_name: string;
+          first_name: string;
           id: string;
+          identity_status: string;
+          identity_verified_at: string | null;
           phone: string;
         };
         Insert: {
           role?: string;
           created_at?: string;
           display_name?: string;
+          first_name?: string;
           id: string;
+          identity_status?: string;
+          identity_verified_at?: string | null;
           phone?: string;
         };
         Update: {
           role?: string;
           created_at?: string;
           display_name?: string;
+          first_name?: string;
           id?: string;
+          identity_status?: string;
+          identity_verified_at?: string | null;
           phone?: string;
         };
         Relationships: [];
@@ -214,3 +265,4 @@ export type ListingInsert = Database["public"]["Tables"]["listings"]["Insert"];
 export type ListingUpdate = Database["public"]["Tables"]["listings"]["Update"];
 export type ProfileRow = Database["public"]["Tables"]["profiles"]["Row"];
 export type PaymentRow = Database["public"]["Tables"]["payments"]["Row"];
+export type IdentityVerificationRow = Database["public"]["Tables"]["identity_verifications"]["Row"];

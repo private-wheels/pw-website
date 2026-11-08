@@ -1,3 +1,5 @@
+import type { IdentityStatus } from "@/lib/identity";
+
 export type Transmission = "Manual" | "Automatic" | "Semi-Automatic" | "CVT";
 
 export type FuelType = "Petrol" | "Diesel" | "Hybrid" | "Electric";
@@ -89,6 +91,8 @@ export interface User {
   id: string;
   email: string;
   name: string;
+  /** From the register form, for greetings. Empty for older and temporary accounts. */
+  firstName: string;
   phone: string;
   role: Role;
   /**
@@ -96,6 +100,8 @@ export interface User {
    * yet. Becomes a normal account once they add and confirm their email.
    */
   isAnonymous: boolean;
+  /** Identity verification (Smile ID); sellers must be verified to pay for a listing. */
+  identityStatus: IdentityStatus;
 }
 
 export interface FilterState {

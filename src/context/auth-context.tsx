@@ -16,6 +16,8 @@ interface AuthContextValue {
   logout: () => Promise<void>;
   /** Saves name/phone to the profile and updates `user` in place. */
   updateProfile: (updates: { name?: string; phone?: string }) => Promise<void>;
+  /** Reloads the profile, e.g. after identity verification changes it. */
+  refreshUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
@@ -86,6 +88,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [user],
   );
 
+  const refreshUser = useCallback(async () => {
+    if (!account) return;
+    setUser(await authStore.loadUser(account.id, account.email, account.isAnonymous));
+  }, [account]);
+
   const currentUser = account && user?.id === account.id ? user : null;
   const loading = !sessionChecked || (account !== null && currentUser === null);
 
@@ -96,6 +103,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     register: authStore.register,
     logout,
     updateProfile,
+    refreshUser,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

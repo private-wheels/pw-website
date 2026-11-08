@@ -211,3 +211,60 @@ export async function recordRefundOutcome(reference: string, processed: boolean)
     .eq("status", "refund_pending");
   if (error) throw new Error(error.message);
 }
+
+// ---------------------------------------------------------------------------
+// Reporting (admin Finance page). Read-only.
+// ---------------------------------------------------------------------------
+
+export type PaystackListedTransaction = {
+  id: number;
+  reference: string;
+  status: string;
+  amount: number;
+  /** Paystack's fee in cents, VAT included. */
+  fees: number | null;
+  currency: string;
+  channel: string | null;
+  paid_at: string | null;
+  customer?: { email?: string | null };
+  authorization?: { brand?: string | null; last4?: string | null; bank?: string | null; channel?: string | null };
+};
+
+/** Every transaction between two dates (ISO), newest first. */
+export async function listTransactions(from: string, to: string): Promise<PaystackListedTransaction[]> {
+  const all: PaystackListedTransaction[] = [];
+  for (let page = 1; page <= 20; page++) {
+    const query = new URLSearchParams({ from, to, perPage: "100", page: String(page) });
+    const batch = await paystack<PaystackListedTransaction[]>(`/transaction?${query}`);
+    all.push(...batch);
+    if (batch.length < 100) break;
+  }
+  return all;
+}
+
+/** What's waiting to be paid out to the bank account, in cents. */
+export async function fetchBalance(): Promise<{ currency: string; balance: number }[]> {
+  return paystack("/balance");
+}
+
+export type PaystackSettlement = {
+  id: number;
+  status: string;
+  currency?: string;
+  total_amount?: number;
+  effective_amount?: number;
+  total_fees?: number;
+  settlement_date?: string;
+  createdAt?: string;
+};
+
+/** Payouts to the bank account between two dates (ISO). */
+export async function listSettlements(from: string, to: string): Promise<PaystackSettlement[]> {
+  const query = new URLSearchParams({ from, to, perPage: "100" });
+  return paystack<PaystackSettlement[]>(`/settlement?${query}`);
+}
+
+/** The transaction in the Paystack dashboard (test or live, whichever is active there). */
+export function paystackDashboardUrl(transactionId: number): string {
+  return `https://dashboard.paystack.com/#/transactions/${transactionId}`;
+}

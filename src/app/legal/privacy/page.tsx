@@ -153,8 +153,8 @@ export default function PrivacyPolicyPage() {
             </tr>
             <tr>
               <td>
-                <strong>Identity verification (coming later):</strong> your ID document,
-                ID number, a selfie or short video, and the verification result
+                <strong>Identity verification (sellers):</strong> your South African ID
+                number, a selfie and short liveness images, and the verification result
               </td>
               <td>
                 Confirming that sellers are who they say they are, to protect buyers from
@@ -162,15 +162,15 @@ export default function PrivacyPolicyPage() {
                 comparison of your face with your ID photo)
               </td>
               <td>
-                Your explicit consent (s27(1)(a)), which we&apos;ll ask for separately
-                before you start verification
+                Your explicit consent (s27(1)(a)), which you give on a separate consent
+                screen before the check starts
               </td>
             </tr>
           </tbody>
         </LegalTable>
         <p>
-          We collect this information directly from you. Paystack and, later, Smile ID send
-          us the outcome of a payment or verification, but not your full card or biometric
+          We collect this information directly from you. Paystack and Smile ID send us the
+          outcome of a payment or verification, but not your full card or biometric
           details. You&apos;re not obliged to give us any of it, but without the account and
           listing details we can&apos;t list your car.
         </p>
@@ -184,10 +184,13 @@ export default function PrivacyPolicyPage() {
         <h3>Special personal information</h3>
         <p>
           Biometric information is &ldquo;special personal information&rdquo; under POPIA.
-          We will only process it once identity verification is introduced, only with your
-          explicit consent, and only to verify your identity. You can choose not to verify,
-          although some features (such as a &ldquo;verified seller&rdquo; badge) may then
-          not be available to you.
+          It&apos;s processed only with your explicit consent and only to verify your
+          identity. Your ID number, selfie and liveness images go straight from your device
+          to Smile ID, our verification partner:{" "}
+          <strong>Private Wheels doesn&apos;t store them</strong>, and only keeps whether
+          you passed. Every seller must verify before paying for a listing. If you choose
+          not to, you can still create an account and a listing, but you can&apos;t publish
+          it.
         </p>
         <h3>Children</h3>
         <p>
@@ -253,10 +256,14 @@ export default function PrivacyPolicyPage() {
             </tr>
             <tr>
               <td>
-                <strong>Smile ID</strong> (once introduced)
+                <strong>Smile ID</strong> (
+                <a href="https://smileidentity.com/privacy-policy" target="_blank" rel="noreferrer">
+                  privacy policy
+                </a>
+                )
               </td>
               <td>Identity verification</td>
-              <td>ID document, ID number, selfie or video, and the verification result</td>
+              <td>ID number, selfie and liveness images, name, email, and the verification result</td>
             </tr>
           </tbody>
         </LegalTable>
@@ -324,21 +331,26 @@ export default function PrivacyPolicyPage() {
           <tbody>
             <tr>
               <td>Account and contact details</td>
-              <td>While your account is open, and 12 months after you close it</td>
+              <td>
+                While your account is open, and 12 months after you close it. If you delete
+                your account from your dashboard, we delete them straight away
+              </td>
             </tr>
             <tr>
               <td>Listings and photos</td>
               <td>
                 Taken off the public site as soon as the listing is sold, removed or
                 rejected; kept privately for 12 months after that to handle disputes and
-                fraud reports
+                fraud reports. Deleting your account deletes them, and their photos, straight
+                away
               </td>
             </tr>
             <tr>
               <td>Payment and refund records</td>
               <td>
                 5 years from the transaction, as tax and company laws require (such as the
-                Tax Administration Act and the Companies Act)
+                Tax Administration Act and the Companies Act), even if you delete your
+                account. They&apos;re then no longer linked to your account
               </td>
             </tr>
             <tr>
@@ -358,9 +370,12 @@ export default function PrivacyPolicyPage() {
             <tr>
               <td>Identity verification</td>
               <td>
-                The verification result while your account is open and 12 months after you
-                close it; ID images and selfies for no longer than [ID IMAGE RETENTION
-                PERIOD]
+                The verification result (passed, failed or flagged, and Smile ID&apos;s
+                reference) while your account is open and 12 months after you close it. If
+                you delete your account, we keep the result and reference for our records,
+                but no longer linked to your name or contact details. We
+                don&apos;t hold your ID number, selfie or liveness images; Smile ID keeps them
+                under its own privacy policy
               </td>
             </tr>
             <tr>
@@ -472,8 +487,8 @@ export default function PrivacyPolicyPage() {
           <a href={`mailto:${BUSINESS.email}`}>{BUSINESS.email}</a> or our Information
           Officer. We may ask you to prove your identity first, so we don&apos;t hand your
           information to someone else. We&apos;ll respond within a reasonable time, and
-          normally within 30 days. You can also delete your listings yourself from your
-          dashboard.
+          normally within 30 days. You can also delete your listings, or your whole
+          account, yourself from your dashboard.
         </p>
         <p>
           Some information we must keep by law, such as payment records, even if you ask us
@@ -506,8 +521,8 @@ export default function PrivacyPolicyPage() {
 
       <LegalSection id="changes" title="12. Changes to this policy">
         <p>
-          We may update this policy as Private Wheels grows, for example when we introduce
-          identity verification. The date at the top shows when it last changed. If a change
+          We may update this policy as Private Wheels grows, for example when we add new
+          features. The date at the top shows when it last changed. If a change
           materially affects how we use your information, we&apos;ll let you know by email or
           on the site before it takes effect.
         </p>

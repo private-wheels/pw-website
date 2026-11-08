@@ -5,6 +5,14 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 
 export const metadata = { title: "Admin · Members" };
 
+const IDENTITY_LABELS: Record<string, string> = {
+  unverified: "ID not verified",
+  pending: "ID check running",
+  review: "ID check flagged",
+  verified: "ID verified",
+  failed: "ID check failed",
+};
+
 function date(iso: string | null | undefined): string {
   return iso ? new Date(iso).toLocaleDateString("en-ZA", { dateStyle: "medium" }) : "—";
 }
@@ -14,7 +22,7 @@ export default async function AdminMembersPage() {
   const db = createAdminClient();
   const [{ data: users }, { data: profiles }, { data: listings }] = await Promise.all([
     db.auth.admin.listUsers({ perPage: 1000 }),
-    db.from("profiles").select("id, display_name, phone, role"),
+    db.from("profiles").select("id, display_name, phone, role, identity_status"),
     db.from("listings").select("seller_id, status").not("seller_id", "is", null),
   ]);
 
@@ -61,6 +69,11 @@ export default async function AdminMembersPage() {
                     <span className="font-medium">{m.profile?.display_name || m.email.split("@")[0]}</span>
                     {m.profile?.role === "admin" && <Badge>Admin</Badge>}
                     {!m.confirmed && <Badge variant="outline">Email not confirmed</Badge>}
+                    {m.profile && m.profile.role !== "admin" && (
+                      <Badge variant="outline" className={m.profile.identity_status === "verified" ? "border-green-300 text-green-700" : ""}>
+                        {IDENTITY_LABELS[m.profile.identity_status] ?? m.profile.identity_status}
+                      </Badge>
+                    )}
                   </div>
                   <a href={`mailto:${m.email}`} className="text-xs text-muted-foreground hover:underline">
                     {m.email}
