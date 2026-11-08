@@ -43,8 +43,11 @@ in Vercel). Tick them off as they're done.
 
 Sellers can't pay for a listing until they're verified, so this must be live
 before anyone can list (including founding sellers on the `/list` link).
-Do these **in this order**: merging the `smileid-verification` branch before
-steps 1–3 means nobody can verify, so nobody can pay.
+While testing before launch, Vercel Production can run on the **sandbox**
+values (`SMILE_ID_ENV=sandbox`, sandbox key), so test checks cost nothing.
+Steps 2–3 below switch it to production and must be done before
+`SITE_LAUNCHED=true`. If the `SMILE_ID_*` variables are missing altogether,
+nobody can verify, so nobody can pay.
 
 - [x] **1. Apply the database migrations** (done 7 Nov 2026; local dev and
       the live site share one database):
@@ -67,8 +70,8 @@ steps 1–3 means nobody can verify, so nobody can pay.
 - [ ] **3. Production callback URL.** Same portal page → Callback URLs →
       Production → add `https://www.private-wheels.co.za/api/smileid/webhook`.
       Add the same URL under Sandbox too, for preview deployments.
-- [ ] **4. Merge `smileid-verification`.** Vercel redeploys with the new
-      variables.
+- [ ] **4. Redeploy** after changing the variables. Vercel only picks up new
+      variables on a new deployment.
 - [ ] **Wallet balance.** Each check costs $1.30 (Biometric KYC, SA ID). Top up
       before launch and keep an eye on it; checks fail when the wallet is empty.
 - [ ] **Test it once for real** with your own ID on the live site, then check
