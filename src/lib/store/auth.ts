@@ -20,7 +20,7 @@ function friendlyMessage(error: SupabaseAuthError): string {
     case "email_exists":
       return "An account with this email already exists.";
     case "captcha_failed":
-      return "We couldn't verify you're human. Please refresh the page and try again.";
+      return "The security check expired. Please press the button again.";
     case "anonymous_provider_disabled":
       return "Starting a listing without an account isn't switched on yet. Please register first.";
     case "weak_password":

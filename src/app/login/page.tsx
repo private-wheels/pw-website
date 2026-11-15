@@ -3,12 +3,12 @@
 import { Suspense, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { LogIn } from "lucide-react";
+import { Loader2, LogIn } from "lucide-react";
 import { useAuth } from "@/context/auth-context";
 import { AFTER_SIGN_IN_PATH } from "@/lib/identity";
 import { AuthError } from "@/lib/store/auth";
 import { AuthSplitLayout } from "@/components/auth-split-layout";
-import { useTurnstile } from "@/components/turnstile";
+import { CaptchaError, useTurnstile } from "@/components/turnstile";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -48,13 +48,16 @@ function LoginForm() {
     setError(null);
     setSubmitting(true);
     try {
-      await login(email, password, captcha.token);
+      const token = await captcha.getToken();
+      await login(email, password, token);
       router.push(safeNext(searchParams.get("next")));
       router.refresh();
     } catch (err) {
-      setError(err instanceof AuthError ? err.message : "Something went wrong. Please try again.");
+      setError(
+        err instanceof AuthError || err instanceof CaptchaError ? err.message : "Something went wrong. Please try again.",
+      );
       setSubmitting(false);
-      captcha.reset();
+      if (!(err instanceof CaptchaError)) captcha.reset();
     }
   }
 
@@ -78,6 +81,7 @@ function LoginForm() {
             id="email"
             type="email"
             required
+            autoComplete="email"
             placeholder="you@example.com"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
@@ -92,6 +96,7 @@ function LoginForm() {
             id="password"
             type="password"
             required
+            autoComplete="current-password"
             placeholder="••••••••"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
@@ -104,11 +109,11 @@ function LoginForm() {
         <Button
           type="submit"
           size="lg"
-          disabled={submitting || !captcha.ready}
+          disabled={submitting}
           className="mt-2 rounded-full bg-primary hover:bg-primary/90"
         >
-          <LogIn className="h-4 w-4" />
-          Sign In
+          {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <LogIn className="h-4 w-4" />}
+          {submitting ? "Signing in…" : "Sign In"}
         </Button>
       </form>
     </AuthSplitLayout>

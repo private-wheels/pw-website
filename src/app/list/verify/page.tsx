@@ -11,6 +11,7 @@ import {
   Loader2,
   Lock,
   RotateCcw,
+  Save,
   ScanFace,
   ShieldCheck,
   UserCheck,
@@ -194,6 +195,8 @@ function Verify() {
   const dashboardLink = user.isAnonymous ? null : (
     <Button variant="outline" size="lg" className="mt-2 rounded-full" render={<Link href={continueHref}>Go to your dashboard</Link>} />
   );
+  // Reassures sellers mid-listing that stopping here doesn't lose their car.
+  const savedNote = unpaidListingId ? <ListingSavedNote temporary={user.isAnonymous} /> : null;
 
   // ---- Verified --------------------------------------------------------------
   if (state.status === "verified") {
@@ -247,6 +250,7 @@ function Verify() {
             : "This usually takes less than a minute. Please keep this page open."}
         </p>
         {slow && <p className="text-xs">This page also updates on its own if the result comes in.</p>}
+        {slow && savedNote}
         {slow && dashboardLink}
       </Outcome>
     );
@@ -261,6 +265,7 @@ function Verify() {
           nothing you need to do. We&apos;ll email you as soon as it&apos;s done
           {unpaidListingId ? ", and then you can pay for your listing" : ""}.
         </p>
+        {savedNote}
         {dashboardLink}
       </Outcome>
     );
@@ -277,6 +282,7 @@ function Verify() {
           </a>{" "}
           and we&apos;ll sort it out with you.
         </p>
+        {savedNote}
         {dashboardLink}
       </Outcome>
     );
@@ -345,10 +351,28 @@ function Verify() {
             You can create your listing first, but you&apos;ll need to verify before you can pay for it.
           </p>
         )}
+        {!canSkip && unpaidListingId && !user.isAnonymous && (
+          <Button variant="ghost" size="lg" className="rounded-full" render={<Link href="/dashboard">I&apos;ll do this later</Link>} />
+        )}
       </div>
+      {!canSkip && savedNote && <div className="mt-4">{savedNote}</div>}
 
       <HelpCallout className="mt-8" />
     </div>
+  );
+}
+
+function ListingSavedNote({ temporary }: { temporary: boolean }) {
+  return (
+    <p className="flex items-start gap-2 rounded-xl border bg-muted/40 p-3 text-left text-xs text-muted-foreground">
+      <Save className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" />
+      <span>
+        <span className="font-medium text-foreground">Your listing is saved.</span>{" "}
+        {temporary
+          ? "Open the link we emailed you to set a password, and you'll find it in your dashboard, ready to finish."
+          : "You'll find it in your dashboard, ready to pay once you're verified."}
+      </span>
+    </p>
   );
 }
 

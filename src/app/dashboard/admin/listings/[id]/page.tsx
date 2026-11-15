@@ -61,7 +61,7 @@ export default async function AdminListingPage({ params }: { params: Promise<{ i
   });
 
   const facts: [string, string][] = [
-    ["Price", formatCurrency(row.price)],
+    ["Price", row.price === null ? "—" : formatCurrency(row.price)],
     ["Mileage", formatMileage(row.mileage)],
     ["Transmission", row.transmission],
     ["Fuel", row.fuel_type],

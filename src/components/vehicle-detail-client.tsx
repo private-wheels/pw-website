@@ -29,6 +29,7 @@ import type { Vehicle } from "@/lib/types";
 import { formatCurrency, formatDateShort, formatMileage } from "@/lib/format";
 import { getPriceRating, type PriceRating } from "@/lib/filter";
 import { FinanceCalculator } from "@/components/finance-calculator";
+import { FinancePartner } from "@/components/finance-partner";
 import { VehiclePlaceholder } from "@/components/vehicle-placeholder";
 import { VehicleMedia } from "@/components/vehicle-media";
 import { VehicleCard } from "@/components/vehicle-card";
@@ -370,6 +371,7 @@ export function VehicleDetailClient({ id }: { id: string }) {
                   </DialogHeader>
                   <div className="max-h-[70vh] overflow-y-auto pr-1">
                     <FinanceCalculator initialPrice={String(listing.price)} />
+                    <FinancePartner compact className="mt-6" />
                   </div>
                 </DialogContent>
               </Dialog>

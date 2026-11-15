@@ -40,7 +40,7 @@ export function AdminListingRow({ row, meta }: { row: ListingRow; meta?: string 
           {!row.seller_id && <Badge variant="outline">Demo</Badge>}
         </div>
         <p className="truncate text-sm text-muted-foreground">
-          {formatCurrency(row.price)} · {row.seller_name} · {row.town}, {row.province}
+          {row.price === null ? "No price yet" : formatCurrency(row.price)} · {row.seller_name} · {row.town}, {row.province}
         </p>
         {meta && <p className="text-xs text-muted-foreground">{meta}</p>}
       </div>

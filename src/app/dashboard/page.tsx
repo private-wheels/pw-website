@@ -27,11 +27,17 @@ import {
 
 /** What the seller should know or do next, per status. */
 const STATUS_HINTS: Partial<Record<Vehicle["status"], string>> = {
+  draft: "Only you can see this. Finish it whenever you're ready, then pay to send it for review.",
   pending_payment: "Pay the listing fee to send it for review. You'll verify your identity first if you haven't yet.",
   pending_review: "We're reviewing it, usually within one working day. We'll email you.",
   changes_requested: "Make the change below, then save to resubmit. There's nothing more to pay.",
   rejected: "This listing wasn't approved.",
 };
+
+/** "2019 Toyota Corolla 1.8", or a stand-in for a draft with no details yet. */
+function listingName(listing: Vehicle): string {
+  return [listing.year || "", listing.make, listing.model, listing.variant].filter(Boolean).join(" ") || "Untitled draft";
+}
 
 /** Seller can pause / resume / mark sold once a listing has been approved. */
 const MANAGEABLE = new Set<Vehicle["status"]>(["active", "paused", "sold"]);
@@ -111,7 +117,8 @@ export default function DashboardPage() {
   }
 
   async function handleDelete(listing: Vehicle) {
-    if (!window.confirm(`Delete your ${listing.year} ${listing.make} ${listing.model} listing? This can't be undone.`)) {
+    const what = listing.status === "draft" ? "draft" : "listing";
+    if (!window.confirm(`Delete your ${listingName(listing)} ${what}? This can't be undone.`)) {
       return;
     }
     try {
@@ -229,16 +236,17 @@ export default function DashboardPage() {
 
               <div className="flex-1">
                 <div className="flex flex-wrap items-center gap-2">
-                  <p className="font-semibold">
-                    {listing.year} {listing.make} {listing.model} {listing.variant}
-                  </p>
+                  <p className="font-semibold">{listingName(listing)}</p>
                   <Badge className={STATUS_STYLES[listing.status]} variant="secondary">
                     {STATUS_LABELS[listing.status] ?? listing.status}
                   </Badge>
                 </div>
                 <p className="text-sm text-muted-foreground">
-                  {formatCurrency(listing.price)} · {formatMileage(listing.mileage)} ·{" "}
-                  {listing.town}, {listing.province}
+                  {listing.status === "draft"
+                    ? [listing.price ? formatCurrency(listing.price) : "", listing.mileage ? formatMileage(listing.mileage) : "", [listing.town, listing.province].filter(Boolean).join(", ")]
+                        .filter(Boolean)
+                        .join(" · ") || "Not much filled in yet"
+                    : `${formatCurrency(listing.price)} · ${formatMileage(listing.mileage)} · ${listing.town}, ${listing.province}`}
                 </p>
                 {STATUS_HINTS[listing.status] && !(isAdmin && listing.status === "pending_payment") && (
                   <p className="mt-1 text-xs text-muted-foreground">{STATUS_HINTS[listing.status]}</p>
@@ -271,12 +279,16 @@ export default function DashboardPage() {
                 )}
                 {listing.status !== "rejected" && (
                   <Button
-                    variant={listing.status === "changes_requested" ? "default" : "outline"}
+                    variant={listing.status === "changes_requested" || listing.status === "draft" ? "default" : "outline"}
                     size="sm"
                     render={
                       <Link href={`/dashboard/listings/${listing.id}/edit`}>
                         <Pencil className="h-3.5 w-3.5" />
-                        {listing.status === "changes_requested" ? "Edit & resubmit" : "Edit"}
+                        {listing.status === "changes_requested"
+                          ? "Edit & resubmit"
+                          : listing.status === "draft"
+                            ? "Continue"
+                            : "Edit"}
                       </Link>
                     }
                   />

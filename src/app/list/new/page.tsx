@@ -7,7 +7,7 @@ import { useAuth } from "@/context/auth-context";
 import { AuthError, startAnonymous } from "@/lib/store/auth";
 import { ListingWizard } from "@/components/listing-wizard";
 import { HelpCallout } from "@/components/help-callout";
-import { useTurnstile } from "@/components/turnstile";
+import { CaptchaError, useTurnstile } from "@/components/turnstile";
 import { Button } from "@/components/ui/button";
 
 /**
@@ -22,15 +22,24 @@ export default function ListNewPage() {
   const [error, setError] = useState<string | null>(null);
   const started = useRef(false);
 
+  const { getToken } = captcha;
   useEffect(() => {
-    if (loading || user || !captcha.ready || started.current) return;
+    if (loading || user || started.current) return;
     started.current = true;
     // One attempt per page load: on failure show the error and let "Try
     // again" reload, rather than retrying (and spamming Supabase) in a loop.
-    startAnonymous(captcha.token).catch((err) => {
-      setError(err instanceof AuthError ? err.message : "Something went wrong. Please try again.");
-    });
-  }, [loading, user, captcha]);
+    getToken()
+      .then((token) => startAnonymous(token))
+      .catch((err) => {
+        setError(
+          err instanceof CaptchaError
+            ? "The security check didn't load. Check your connection (and any ad blocker), then try again."
+            : err instanceof AuthError
+              ? err.message
+              : "Something went wrong. Please try again.",
+        );
+      });
+  }, [loading, user, getToken]);
 
   if (user) return <ListingWizard mode="create" />;
 

@@ -22,7 +22,7 @@ type ListingEvent =
   | { type: "changes_requested"; note: string }
   | { type: "rejected"; note: string; refund: boolean; amount?: string };
 
-export function listingTitle(l: { year: number; make: string; model: string; variant: string }) {
+export function listingTitle(l: { year: number | null; make: string; model: string; variant: string }) {
   return [l.year, l.make, l.model, l.variant].filter(Boolean).join(" ");
 }
 
