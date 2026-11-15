@@ -4,7 +4,7 @@ import { updateTag } from "next/cache";
 import { isListingId } from "@/lib/listings";
 import { notifyListing } from "@/lib/server/listing-emails";
 import { LISTINGS_TAG, createSupabaseServerClient } from "@/lib/supabase/server";
-import { missingViews } from "@/lib/listing-photos";
+import { COMPLETENESS_COLUMNS, missingDetails } from "@/lib/listing-complete";
 
 /**
  * Expires the cached public listings after a seller creates, edits, pauses or
@@ -24,9 +24,9 @@ export async function refreshListings() {
 export async function resubmitListing(id: string): Promise<{ ok: boolean }> {
   if (!isListingId(id)) return { ok: false };
   const supabase = await createSupabaseServerClient();
-  // The four required photo views go back into review with it.
-  const { data: listing } = await supabase.from("listings").select("photo_views").eq("id", id).maybeSingle();
-  if (!listing || missingViews(listing.photo_views).length > 0) return { ok: false };
+  // Only complete listings go back into review.
+  const { data: listing } = await supabase.from("listings").select(COMPLETENESS_COLUMNS).eq("id", id).maybeSingle();
+  if (!listing || missingDetails(listing).length > 0) return { ok: false };
 
   const { data, error } = await supabase
     .from("listings")

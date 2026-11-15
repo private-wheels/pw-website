@@ -5,6 +5,7 @@ import { BrandIcon } from "@/components/brand-mark";
 import { formatCurrency, formatMileage } from "@/lib/format";
 import { VehiclePlaceholder } from "@/components/vehicle-placeholder";
 import { cn } from "@/lib/utils";
+import { coverOf } from "@/lib/listing-photos";
 
 const MAX_VISIBLE_FEATURES = 4;
 
@@ -15,6 +16,7 @@ const MAX_VISIBLE_FEATURES = 4;
  * whatever hasn't been entered yet.
  */
 export function ListingPreviewCard({ form }: { form: FormState }) {
+  const cover = coverOf(form.photos, form.coverUrl);
   const hasAnything =
     form.make ||
     form.model ||
@@ -54,9 +56,9 @@ export function ListingPreviewCard({ form }: { form: FormState }) {
   return (
     <div className="shadow-capsule overflow-hidden rounded-xl border bg-card">
       <div className="relative aspect-[16/10]">
-        {form.photos[0] ? (
+        {cover ? (
           <Image
-            src={form.photos[0].url}
+            src={cover}
             alt="Cover photo"
             fill
             sizes="320px"
