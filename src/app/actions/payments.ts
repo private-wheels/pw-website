@@ -18,6 +18,21 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 export async function startListingCheckout(
   listingId: string,
 ): Promise<{ url: string } | { error: string; needsVerification?: true }> {
+  // An unexpected failure (a missing setting, an outage) comes back as a
+  // message the seller can act on, not a bare "something went wrong".
+  try {
+    return await checkout(listingId);
+  } catch (err) {
+    console.error("[payments] checkout failed", err);
+    return {
+      error: "We couldn't start the payment because of a problem on our side. Please try again in a minute, or email hello@private-wheels.co.za.",
+    };
+  }
+}
+
+async function checkout(
+  listingId: string,
+): Promise<{ url: string } | { error: string; needsVerification?: true }> {
   if (!isListingId(listingId)) return { error: "Listing not found." };
 
   const supabase = await createSupabaseServerClient();
