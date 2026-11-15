@@ -106,7 +106,8 @@ Paystack test card: `4084 0840 8408 4081`, any future expiry, CVV `408`.
 - [ ] **PAIA annual report:** every year on the eServices portal, 1 April to 30 June
       (first one due 1 Apr to 30 Jun 2027, for the year to 31 March 2027).
 - [x] **PAIA manual:** required for all private bodies since the small-business exemption
-      lapsed on 31 Dec 2021. Published at `/legal/paia` (linked with the other policies).
+      lapsed on 31 Dec 2021. Published at `/legal/paia` (linked with the other policies),
+      and uploaded to the Regulator's eServices portal (English) on 15 Nov 2026.
 
 ## 5. Before inviting sellers (recommended)
 
