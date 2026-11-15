@@ -47,7 +47,7 @@ export default function PaiaManualPage() {
         <ul>
           <li>
             <strong>Head of the private body and Information Officer:</strong>{" "}
-            {BUSINESS.informationOfficer}
+            {BUSINESS.informationOfficer}, registered with the Information Regulator
           </li>
           <li>
             <strong>Email for PAIA and privacy requests:</strong>{" "}
