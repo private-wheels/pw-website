@@ -30,6 +30,7 @@ import { formatCurrency, formatDateShort, formatMileage } from "@/lib/format";
 import { getPriceRating, type PriceRating } from "@/lib/filter";
 import { FinanceCalculator } from "@/components/finance-calculator";
 import { FinancePartner } from "@/components/finance-partner";
+import { photoViewLabel } from "@/lib/listing-photos";
 import { VehiclePlaceholder } from "@/components/vehicle-placeholder";
 import { VehicleMedia } from "@/components/vehicle-media";
 import { VehicleCard } from "@/components/vehicle-card";
@@ -184,6 +185,11 @@ export function VehicleDetailClient({ id }: { id: string }) {
               ) : (
                 <VehiclePlaceholder seed={listing.id} />
               )}
+              {photoViewLabel(listing.photoViews[activeImage]) && (
+                <span className="pointer-events-none absolute bottom-3 left-3 rounded-full bg-black/55 px-2.5 py-1 text-xs font-medium text-white">
+                  {photoViewLabel(listing.photoViews[activeImage])}
+                </span>
+              )}
               <div className="absolute top-3 left-3 flex flex-col items-start gap-1.5">
                 {hasPriceDrop && (
                   <span className="rounded-full bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground">
@@ -203,7 +209,7 @@ export function VehicleDetailClient({ id }: { id: string }) {
                     key={i}
                     type="button"
                     onClick={() => setActiveImage(i)}
-                    aria-label={`View photo ${i + 1}`}
+                    aria-label={`View photo ${i + 1}${photoViewLabel(listing.photoViews[i]) ? ` (${photoViewLabel(listing.photoViews[i])})` : ""}`}
                     aria-current={listing.images.length > 0 && i === activeImage}
                     className="relative aspect-[4/3] w-[calc(20%-6.4px)] shrink-0 overflow-hidden rounded-lg"
                   >

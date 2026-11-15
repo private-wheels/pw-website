@@ -53,6 +53,7 @@ import { SiteContainer } from "@/components/site-container";
 import { HelpCallout } from "@/components/help-callout";
 import { ListingPreviewCard } from "@/components/listing-preview-card";
 import { PhotoUploader } from "@/components/photo-uploader";
+import { type ListingPhoto, fromPhotos, listViews, missingViews, toPhotos } from "@/lib/listing-photos";
 
 export interface FormState {
   make: string;
@@ -73,8 +74,8 @@ export interface FormState {
   colour: string;
   features: string[];
   description: string;
-  /** Public URLs of uploaded photos; the first is the cover. */
-  images: string[];
+  /** Uploaded photos and the view each shows; the front photo is the cover. */
+  photos: ListingPhoto[];
   /** Contact details shown to buyers on the listing. */
   sellerName: string;
   phone: string;
@@ -99,7 +100,7 @@ const EMPTY_FORM: FormState = {
   colour: "",
   features: [],
   description: "",
-  images: [],
+  photos: [],
   sellerName: "",
   phone: "",
 };
@@ -127,7 +128,7 @@ function vehicleToForm(v: Vehicle): FormState {
     colour: v.colour,
     features: v.features,
     description: v.description,
-    images: v.images,
+    photos: toPhotos(v.images, v.photoViews),
     sellerName: v.sellerName,
     phone: v.phone,
   };
@@ -183,14 +184,16 @@ export function ListingWizard({
   }
 
   const canContinueStep0 = form.make && form.model && form.year && form.price && form.province && form.bodyType;
+  const missingPhotoViews = missingViews(form.photos.map((p) => p.view));
+  const enoughPhotos = missingPhotoViews.length === 0;
 
-  function handlePhotosChange(update: (images: string[]) => string[]) {
+  function handlePhotosChange(update: (photos: ListingPhoto[]) => ListingPhoto[]) {
     setForm((f) => {
-      const images = update(f.images);
-      images.forEach((url) => {
-        if (!f.images.includes(url)) uploadedThisSession.current.add(url);
+      const photos = update(f.photos);
+      photos.forEach(({ url }) => {
+        if (!f.photos.some((p) => p.url === url)) uploadedThisSession.current.add(url);
       });
-      return { ...f, images };
+      return { ...f, photos };
     });
   }
 
@@ -217,14 +220,14 @@ export function ListingWizard({
    */
   async function handleSaveDraft() {
     if (!user) return;
-    const { make, model, year, price, images, description } = form;
-    if (!make && !model.trim() && !year && !price && images.length === 0 && !description.trim()) {
+    const { make, model, year, price, photos, description } = form;
+    if (!make && !model.trim() && !year && !price && photos.length === 0 && !description.trim()) {
       toast.error("Add a few details about your car first.");
       return;
     }
     setSavingDraft(true);
     try {
-      const saved = await saveDraft(draftId, form);
+      const saved = await saveDraft(draftId, { ...form, ...fromPhotos(form.photos) });
       setDraftId(saved.id);
       // Photos on the saved draft are now kept until the listing is saved
       // without them; ones removed before this save can go now.
@@ -247,6 +250,11 @@ export function ListingWizard({
 
   async function handlePublish() {
     if (!user) return;
+    if (!enoughPhotos) {
+      toast.error(`Add photos of ${listViews(missingPhotoViews)} of your car before you continue.`);
+      setStep(2);
+      return;
+    }
     if (!form.sellerName.trim() || !form.phone.trim()) {
       toast.error("Add your name and contact number so buyers can reach you.");
       setStep(3);
@@ -273,7 +281,7 @@ export function ListingWizard({
       colour: form.colour || "White",
       features: form.features,
       description: form.description,
-      images: form.images,
+      ...fromPhotos(form.photos),
       sellerName: form.sellerName.trim(),
       phone: form.phone.trim(),
     };
@@ -615,12 +623,14 @@ export function ListingWizard({
         )}
 
         {step === 2 && user && (
+          <div className="flex flex-col gap-5">
           <PhotoUploader
             userId={user.id}
-            images={form.images}
+            photos={form.photos}
             onChange={handlePhotosChange}
             onRemove={handlePhotoRemoved}
           />
+          </div>
         )}
 
         {step === 3 && (
@@ -689,7 +699,7 @@ export function ListingWizard({
               <ReviewField label="Colour" value={form.colour || "—"} />
               <ReviewField label="Previous Owners" value={form.previousOwners || "—"} />
               <ReviewField label="Features" value={`${form.features.length} selected`} />
-              <ReviewField label="Photos" value={`${form.images.length} added`} />
+              <ReviewField label="Photos" value={`${form.photos.length} added`} />
               <ReviewField
                 label="Contact"
                 value={[form.sellerName, form.phone].filter(Boolean).join(" · ") || "—"}
@@ -747,7 +757,7 @@ export function ListingWizard({
           {step < STEPS.length - 1 ? (
             <Button
               onClick={goNext}
-              disabled={step === 0 && !canContinueStep0}
+              disabled={(step === 0 && !canContinueStep0) || (step === 2 && !enoughPhotos)}
               className="rounded-full bg-foreground text-background hover:opacity-90"
             >
               Next

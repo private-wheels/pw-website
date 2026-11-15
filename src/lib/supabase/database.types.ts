@@ -25,6 +25,7 @@ export type Database = {
           fuel_type: string;
           id: string;
           images: string[];
+          photo_views: string[];
           make: string;
           mileage: number;
           model: string;
@@ -61,6 +62,7 @@ export type Database = {
           fuel_type: string;
           id?: string;
           images?: string[];
+          photo_views?: string[];
           make: string;
           mileage?: number;
           model: string;
@@ -97,6 +99,7 @@ export type Database = {
           fuel_type?: string;
           id?: string;
           images?: string[];
+          photo_views?: string[];
           make?: string;
           mileage?: number;
           model?: string;

@@ -30,7 +30,7 @@ export function ListingPreviewCard({ form }: { form: FormState }) {
     form.price ||
     form.description ||
     form.features.length > 0 ||
-    form.images.length > 0;
+    form.photos.length > 0;
 
   if (!hasAnything) {
     return (
@@ -54,9 +54,9 @@ export function ListingPreviewCard({ form }: { form: FormState }) {
   return (
     <div className="shadow-capsule overflow-hidden rounded-xl border bg-card">
       <div className="relative aspect-[16/10]">
-        {form.images[0] ? (
+        {form.photos[0] ? (
           <Image
-            src={form.images[0]}
+            src={form.photos[0].url}
             alt="Cover photo"
             fill
             sizes="320px"

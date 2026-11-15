@@ -1,3 +1,4 @@
+import { isPhotoView } from "@/lib/listing-photos";
 import type {
   AccidentHistory,
   BodyType,
@@ -42,6 +43,7 @@ export function rowToVehicle(row: ListingRow): Vehicle {
     features: row.features,
     description: row.description,
     images: row.images,
+    photoViews: row.photo_views.filter(isPhotoView),
     status: row.status as ListingStatus,
     reviewNote: row.review_note,
     sellerId: row.seller_id ?? "",
@@ -91,6 +93,7 @@ export function vehicleInputToRow(
     features: input.features,
     description: input.description,
     images: input.images,
+    photo_views: input.photoViews,
   };
 }
 
@@ -125,6 +128,7 @@ export type DraftInput = {
   features: string[];
   description: string;
   images: string[];
+  photoViews: string[];
   sellerName: string;
   phone: string;
 };
@@ -159,5 +163,6 @@ export function draftToRow(d: DraftInput) {
     features: d.features.slice(0, 60),
     description: d.description.slice(0, 5000),
     images: d.images.slice(0, 20),
+    photo_views: d.photoViews.slice(0, 20),
   };
 }
