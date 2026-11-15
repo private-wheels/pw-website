@@ -10,7 +10,7 @@ import { PAYMENT_STATUS_STYLES, STATUS_STYLES, statusLabel } from "@/lib/listing
 import type { ListingStatus } from "@/lib/types";
 import { timeAgo } from "@/components/admin/admin-listing-row";
 import { ReviewActions } from "@/components/admin/review-actions";
-import { REQUIRED_PHOTOS } from "@/lib/listing-photos";
+import { REQUIRED_PHOTOS, photoViewLabel } from "@/lib/listing-photos";
 import { VehicleMedia } from "@/components/vehicle-media";
 import { Badge } from "@/components/ui/badge";
 
@@ -134,8 +134,8 @@ export default async function AdminListingPage({ params }: { params: Promise<{ i
           <section className="rounded-2xl border bg-card p-5">
             <h3 className="font-semibold">Photos ({row.images.length})</h3>
             <p className="mt-1 text-xs text-muted-foreground">
-              Required: {REQUIRED_PHOTOS.map((p) => p.label.toLowerCase()).join(", ")}. If any are missing, request
-              changes asking for them, or reject the listing.
+              Each photo shows the view the seller uploaded it as. Check the {REQUIRED_PHOTOS.map((p) => p.label.toLowerCase()).join(", ")}{" "}
+              photos really show that: if one is missing or wrong, request changes asking for it, or reject the listing.
             </p>
             {row.images.length ? (
               <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
@@ -148,6 +148,11 @@ export default async function AdminListingPage({ params }: { params: Promise<{ i
                     className="relative aspect-[4/3] overflow-hidden rounded-lg"
                   >
                     <VehicleMedia vehicle={vehicle} index={index} sizes="(max-width: 640px) 50vw, 240px" />
+                    {photoViewLabel(vehicle.photoViews[index]) && (
+                      <span className="absolute bottom-1.5 left-1.5 rounded-full bg-black/60 px-2 py-0.5 text-[11px] font-medium text-white">
+                        {photoViewLabel(vehicle.photoViews[index])}
+                      </span>
+                    )}
                   </a>
                 ))}
               </div>

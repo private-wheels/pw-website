@@ -232,6 +232,7 @@ export const VEHICLES: Vehicle[] = TEMPLATES.map((t, i) => {
       t.description ??
       `${t.year} ${t.make} ${t.model} ${t.variant} in ${condition.toLowerCase()} condition. ${serviceHistory}. Well looked after and ready for its next owner in ${town}, ${province}.`,
     images: t.images ?? [],
+    photoViews: [],
     status: "active",
     sellerId: seller.id,
     sellerName: seller.name,

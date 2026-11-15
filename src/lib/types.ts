@@ -1,3 +1,4 @@
+import type { PhotoView } from "@/lib/listing-photos";
 import type { IdentityStatus } from "@/lib/identity";
 
 export type Transmission = "Manual" | "Automatic" | "Semi-Automatic" | "CVT";
@@ -69,6 +70,8 @@ export interface Vehicle {
   features: string[];
   description: string;
   images: string[];
+  /** Which view each photo shows, parallel to `images` (empty on older listings). */
+  photoViews: PhotoView[];
   status: ListingStatus;
   /** Admin feedback shown to the seller (changes requested / rejected). */
   reviewNote?: string;

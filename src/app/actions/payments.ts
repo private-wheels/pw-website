@@ -5,6 +5,7 @@ import { headers } from "next/headers";
 import { isListingId } from "@/lib/listings";
 import { formatFee, listingFeeCents, type ListingFee } from "@/lib/payments";
 import { isFoundingPriceActive } from "@/lib/site";
+import { listViews, missingViews } from "@/lib/listing-photos";
 import { initializeTransaction } from "@/lib/paystack";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -31,11 +32,15 @@ export async function startListingCheckout(
   // Read as the user, so RLS guarantees they own the listing.
   const { data: listing } = await supabase
     .from("listings")
-    .select("id, seller_id, status, paid_at, year, make, model")
+    .select("id, seller_id, status, paid_at, year, make, model, photo_views")
     .eq("id", listingId)
     .maybeSingle();
   if (!listing || listing.seller_id !== user.id) return { error: "Listing not found." };
   if (listing.paid_at) return { error: "This listing has already been paid for." };
+  const missing = missingViews(listing.photo_views);
+  if (missing.length > 0) {
+    return { error: `Add photos of ${listViews(missing)} of your car before you pay. Edit the listing to add them.` };
+  }
 
   // Sellers verify their identity (Smile ID) before they can pay.
   const { data: profile } = await supabase
