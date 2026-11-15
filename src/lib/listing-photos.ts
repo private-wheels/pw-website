@@ -65,8 +65,29 @@ export function toPhotos(images: readonly string[], views: readonly string[]): L
   });
 }
 
-/** Back to the two parallel columns, in display order. */
-export function fromPhotos(photos: ListingPhoto[]): { images: string[]; photoViews: PhotoView[] } {
+/**
+ * The cover photo's URL: the one the seller chose, or else the front photo
+ * (or the first photo, if there's no front yet).
+ */
+export function coverOf(photos: ListingPhoto[], chosen: string | null): string | null {
+  return (
+    photos.find((p) => p.url === chosen)?.url ??
+    photos.find((p) => p.view === "front")?.url ??
+    sortPhotos(photos)[0]?.url ??
+    null
+  );
+}
+
+/**
+ * Back to the two parallel columns, in display order: the cover first (the
+ * site shows `images[0]` as a listing's main photo), then the rest by view.
+ */
+export function fromPhotos(
+  photos: ListingPhoto[],
+  cover: string | null,
+): { images: string[]; photoViews: PhotoView[] } {
   const sorted = sortPhotos(photos);
-  return { images: sorted.map((p) => p.url), photoViews: sorted.map((p) => p.view) };
+  const coverUrl = coverOf(photos, cover);
+  const ordered = [...sorted.filter((p) => p.url === coverUrl), ...sorted.filter((p) => p.url !== coverUrl)];
+  return { images: ordered.map((p) => p.url), photoViews: ordered.map((p) => p.view) };
 }
