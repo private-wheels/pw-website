@@ -98,11 +98,12 @@ Paystack test card: `4084 0840 8408 4081`, any future expiry, CVV `408`.
 
 - [x] Set the policies' effective date: `LEGAL_LAST_UPDATED` /
       `[EFFECTIVE DATE]` in `src/lib/legal.ts`.
-- [ ] Attorney review of `/legal/privacy`, `/legal/terms` and `/legal/refunds`.
-- [ ] Register the Information Officer (Wilhelm Stoltz) with the Information
+- [ ] Attorney review of `/legal/privacy`, `/legal/terms`, `/legal/refunds` and `/legal/paia`
+      (skipped for now; worth doing before launch day).
+- [x] Register the Information Officer (Wilhelm Stoltz) with the Information
       Regulator (inforegulator.org.za).
-- [ ] Confirm whether a PAIA manual is required, or the small private body
-      exemption applies.
+- [x] **PAIA manual:** required for all private bodies since the small-business exemption
+      lapsed on 31 Dec 2021. Published at `/legal/paia` (linked with the other policies).
 
 ## 5. Before inviting sellers (recommended)
 

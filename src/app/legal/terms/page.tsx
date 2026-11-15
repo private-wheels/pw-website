@@ -317,9 +317,11 @@ export default function TermsOfUsePage() {
           <li>
             <strong>Registration number:</strong> {BUSINESS.registrationNumber}
           </li>
-          <li>
-            <strong>VAT number:</strong> {BUSINESS.vatNumber}
-          </li>
+          {BUSINESS.vatNumber && (
+            <li>
+              <strong>VAT number:</strong> {BUSINESS.vatNumber}
+            </li>
+          )}
           <li>
             <strong>Directors:</strong> {BUSINESS.directors}
           </li>
