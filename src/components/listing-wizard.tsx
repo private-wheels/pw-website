@@ -703,10 +703,10 @@ export function ListingWizard({
             )}
             {creating && !isAdmin && (
               <p className="rounded-lg border bg-muted/40 p-4 text-sm text-muted-foreground">
-                Listing your car costs a once-off{" "}
-                <span className="font-semibold text-foreground">{fee.label}</span>
+                Listing this car costs{" "}
+                <span className="font-semibold text-foreground">{fee.label}</span>, paid once for this listing
                 {fee.founding &&
-                  ` as a founding seller (it goes up to ${formatFee(LISTING_FEE_CENTS)} when we launch)`}
+                  ` as a founding seller (it goes up to ${formatFee(LISTING_FEE_CENTS)} per listing when we launch)`}
                 .{" "}
                 {user?.isAnonymous ? "Next, you'll add your email and pay" : "You'll pay"} securely with
                 Paystack. Our team then reviews your listing, usually within

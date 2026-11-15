@@ -5,7 +5,7 @@ import { BUSINESS, LISTING_FEE } from "@/lib/legal";
 
 export const metadata: Metadata = {
   title: "Refund Policy | Private Wheels",
-  description: "When and how Private Wheels refunds the once-off listing fee.",
+  description: "When and how Private Wheels refunds the listing fee.",
 };
 
 export default function RefundPolicyPage() {
@@ -23,8 +23,8 @@ export default function RefundPolicyPage() {
     >
       <LegalSection id="scope" title="1. What this policy covers">
         <p>
-          This policy applies to the once-off listing fee ({LISTING_FEE.standard}, or{" "}
-          {LISTING_FEE.founding} for founding sellers) that sellers pay to list a vehicle on
+          This policy applies to the listing fee ({LISTING_FEE.standard} per listing, or{" "}
+          {LISTING_FEE.founding} per listing for founding sellers) that sellers pay to list a vehicle on
           Private Wheels. It forms part of our <Link href="/legal/terms">Terms of Use</Link>.
           Private Wheels isn&apos;t a party to any vehicle sale, so we can&apos;t refund money
           paid between a buyer and a seller.
