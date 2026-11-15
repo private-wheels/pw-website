@@ -3,10 +3,11 @@
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { toast } from "sonner";
-import { Armchair, Car, CarFront, Check, ImagePlus, Info, Loader2, X, type LucideIcon } from "lucide-react";
+import { Armchair, Car, CarFront, Check, ImagePlus, Info, Loader2, Star, X, type LucideIcon } from "lucide-react";
 import { MAX_PHOTOS, PHOTO_ACCEPT, PhotoUploadError, uploadListingPhoto } from "@/lib/storage";
 import {
   REQUIRED_PHOTOS,
+  coverOf,
   missingViews,
   sortPhotos,
   type ListingPhoto,
@@ -28,16 +29,22 @@ const VIEW_ICONS: Record<RequiredView, LucideIcon> = {
  * back, side, inside), then any number of other photos. Each upload is tagged
  * with its slot's view, which shows on the listing. Files upload to Supabase
  * Storage as they're chosen; removing one is reported via `onRemove` so the
- * wizard decides when the stored file is deleted. The front photo is the cover.
+ * wizard decides when the stored file is deleted. Each photo has a chip to
+ * make it the cover; until the seller picks one, the front photo is the cover.
  */
 export function PhotoUploader({
   userId,
   photos,
   onChange,
   onRemove,
+  coverUrl,
+  onCoverChange,
 }: {
   userId: string;
   photos: ListingPhoto[];
+  /** The chosen cover, or null for the front photo. */
+  coverUrl: string | null;
+  onCoverChange: (url: string) => void;
   /** Receives an updater, since uploads finish one by one. */
   onChange: (update: (photos: ListingPhoto[]) => ListingPhoto[]) => void;
   onRemove: (url: string) => void;
@@ -57,6 +64,26 @@ export function PhotoUploader({
   const others = photos.filter((p) => p.view === "other");
   const room = MAX_PHOTOS - photos.length - uploadingViews.length - uploadingOthers;
   const missing = missingViews(photos.map((p) => p.view));
+  const cover = coverOf(photos, coverUrl);
+
+  function coverChip(photo: ListingPhoto) {
+    const isCover = photo.url === cover;
+    return (
+      <button
+        type="button"
+        onClick={() => onCoverChange(photo.url)}
+        disabled={isCover}
+        aria-pressed={isCover}
+        className={cn(
+          "absolute bottom-2 left-2 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold shadow-sm transition-colors",
+          isCover ? "bg-primary text-primary-foreground" : "bg-card/90 text-foreground hover:bg-card",
+        )}
+      >
+        <Star className={cn("h-3 w-3", isCover && "fill-current")} />
+        {isCover ? "Cover" : "Set as cover"}
+      </button>
+    );
+  }
 
   function pick(view: PhotoView) {
     target.current = view;
@@ -156,8 +183,8 @@ export function PhotoUploader({
                   <Image src={photo.url} alt={`${label} photo`} fill sizes="200px" className="object-cover" />
                   <span className="absolute top-2 left-2 rounded-full bg-card px-2 py-0.5 text-[11px] font-bold shadow-sm">
                     {label}
-                    {key === "front" ? " · Cover" : ""}
                   </span>
+                  {coverChip(photo)}
                   <button
                     type="button"
                     onClick={() => remove(photo)}
@@ -215,6 +242,7 @@ export function PhotoUploader({
             {others.map((photo, i) => (
               <div key={photo.url} className="relative aspect-[4/3] overflow-hidden rounded-lg border bg-muted">
                 <Image src={photo.url} alt={`Extra photo ${i + 1}`} fill sizes="200px" className="object-cover" />
+                {coverChip(photo)}
                 <button
                   type="button"
                   onClick={() => remove(photo)}

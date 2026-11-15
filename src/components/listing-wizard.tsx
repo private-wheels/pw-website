@@ -76,6 +76,8 @@ export interface FormState {
   description: string;
   /** Uploaded photos and the view each shows; the front photo is the cover. */
   photos: ListingPhoto[];
+  /** The photo chosen as the cover; null means the front photo. */
+  coverUrl: string | null;
   /** Contact details shown to buyers on the listing. */
   sellerName: string;
   phone: string;
@@ -101,6 +103,7 @@ const EMPTY_FORM: FormState = {
   features: [],
   description: "",
   photos: [],
+  coverUrl: null,
   sellerName: "",
   phone: "",
 };
@@ -129,6 +132,7 @@ function vehicleToForm(v: Vehicle): FormState {
     features: v.features,
     description: v.description,
     photos: toPhotos(v.images, v.photoViews),
+    coverUrl: v.images[0] ?? null,
     sellerName: v.sellerName,
     phone: v.phone,
   };
@@ -227,7 +231,7 @@ export function ListingWizard({
     }
     setSavingDraft(true);
     try {
-      const saved = await saveDraft(draftId, { ...form, ...fromPhotos(form.photos) });
+      const saved = await saveDraft(draftId, { ...form, ...fromPhotos(form.photos, form.coverUrl) });
       setDraftId(saved.id);
       // Photos on the saved draft are now kept until the listing is saved
       // without them; ones removed before this save can go now.
@@ -281,7 +285,7 @@ export function ListingWizard({
       colour: form.colour || "White",
       features: form.features,
       description: form.description,
-      ...fromPhotos(form.photos),
+      ...fromPhotos(form.photos, form.coverUrl),
       sellerName: form.sellerName.trim(),
       phone: form.phone.trim(),
     };
@@ -627,6 +631,8 @@ export function ListingWizard({
           <PhotoUploader
             userId={user.id}
             photos={form.photos}
+            coverUrl={form.coverUrl}
+            onCoverChange={(url) => set("coverUrl", url)}
             onChange={handlePhotosChange}
             onRemove={handlePhotoRemoved}
           />
