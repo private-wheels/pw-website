@@ -25,6 +25,8 @@ export type Database = {
           fuel_type: string;
           id: string;
           images: string[];
+          launch_email_pending: boolean;
+          reminder_sent_at: string | null;
           photo_views: string[];
           make: string;
           mileage: number;
@@ -62,6 +64,8 @@ export type Database = {
           fuel_type: string;
           id?: string;
           images?: string[];
+          launch_email_pending?: boolean;
+          reminder_sent_at?: string | null;
           photo_views?: string[];
           make: string;
           mileage?: number;
@@ -99,6 +103,8 @@ export type Database = {
           fuel_type?: string;
           id?: string;
           images?: string[];
+          launch_email_pending?: boolean;
+          reminder_sent_at?: string | null;
           photo_views?: string[];
           make?: string;
           mileage?: number;

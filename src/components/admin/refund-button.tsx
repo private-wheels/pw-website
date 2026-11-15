@@ -56,7 +56,8 @@ export function RefundButton({ paymentId, amount }: { paymentId: string; amount:
                     toast.error(result.error);
                     return;
                   }
-                  toast.success("Refund started. It usually lands within 5–10 working days.");
+                  if (result.warning) toast.warning(result.warning);
+                  else toast.success("Refund started and the seller emailed. It usually lands within 5–10 working days.");
                   setOpen(false);
                   router.refresh();
                 })

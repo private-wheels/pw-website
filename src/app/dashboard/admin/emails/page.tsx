@@ -1,15 +1,21 @@
 import { getAdmin } from "@/lib/server/admin";
 import {
+  accountDeletedEmail,
   adminIdentityReviewEmail,
   adminReviewNeededEmail,
   changesRequestedEmail,
+  enquiryCopyEmail,
+  enquiryToSellerEmail,
   identityFailedEmail,
   identityInReviewEmail,
   identityRetryEmail,
   identityVerifiedEmail,
   listingApprovedEmail,
+  listingLiveEmail,
   listingReceivedEmail,
   listingRejectedEmail,
+  listingReminderEmail,
+  refundIssuedEmail,
 } from "@/lib/email-templates";
 
 export const metadata = { title: "Admin · Emails" };
@@ -20,7 +26,17 @@ const SAMPLE = {
   listingId: "00000000-0000-0000-0000-000000000000",
 };
 
-/** Every email the site sends about a listing or ID check, with sample data. */
+const ENQUIRY = {
+  listingTitle: SAMPLE.listingTitle,
+  listingId: SAMPLE.listingId,
+  sellerName: SAMPLE.sellerName,
+  buyerName: "Sipho Dlamini",
+  buyerEmail: "sipho@example.com",
+  buyerPhone: "082 123 4567",
+  message: "Hi, is the Polo still available? Could I view it on Saturday morning?",
+};
+
+/** Every email the site sends (password emails come from Supabase), with sample data. */
 export default async function AdminEmailsPage() {
   if (!(await getAdmin())) return null;
 
@@ -46,6 +62,16 @@ export default async function AdminEmailsPage() {
       }),
     },
     { to: "Admins, new listing to review", email: adminReviewNeededEmail(SAMPLE) },
+    {
+      to: "Seller, refunded from Finance (not declining)",
+      email: refundIssuedEmail({ sellerName: SAMPLE.sellerName, amount: "R125", listingTitle: SAMPLE.listingTitle }),
+    },
+    { to: "Seller, launch day (approved before launch)", email: listingLiveEmail(SAMPLE) },
+    { to: "Seller, reminder: unfinished draft (after 2 days)", email: listingReminderEmail({ ...SAMPLE, stage: "draft" }) },
+    { to: "Seller, reminder: not paid (after 2 days)", email: listingReminderEmail({ ...SAMPLE, stage: "unpaid" }) },
+    { to: "Seller, after deleting their account", email: accountDeletedEmail({ name: SAMPLE.sellerName }) },
+    { to: "Seller, buyer enquiry (reply goes to the buyer)", email: enquiryToSellerEmail(ENQUIRY) },
+    { to: "Buyer, copy of their enquiry", email: enquiryCopyEmail(ENQUIRY) },
     { to: "Seller, ID verified (slow check or after review)", email: identityVerifiedEmail({ name: SAMPLE.sellerName }) },
     { to: "Seller, ID check flagged for review", email: identityInReviewEmail({ name: SAMPLE.sellerName }) },
     { to: "Seller, ID check failed (can retry)", email: identityRetryEmail({ name: SAMPLE.sellerName }) },

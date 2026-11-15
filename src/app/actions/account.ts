@@ -1,6 +1,8 @@
 "use server";
 
 import { updateTag } from "next/cache";
+import { sendEmail } from "@/lib/email";
+import { accountDeletedEmail } from "@/lib/email-templates";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { LISTINGS_TAG, createSupabaseServerClient } from "@/lib/supabase/server";
 
@@ -22,7 +24,11 @@ export async function deleteAccount(): Promise<{ ok: true } | { ok: false; error
   if (!user) return { ok: false, error: "Please sign in first." };
 
   const db = createAdminClient();
-  const { data: profile } = await db.from("profiles").select("role").eq("id", user.id).maybeSingle();
+  const { data: profile } = await db
+    .from("profiles")
+    .select("role, first_name, display_name")
+    .eq("id", user.id)
+    .maybeSingle();
   if (profile?.role === "admin") {
     return { ok: false, error: "Admin accounts can't be deleted from the dashboard." };
   }
@@ -51,5 +57,9 @@ export async function deleteAccount(): Promise<{ ok: true } | { ok: false; error
   }
 
   updateTag(LISTINGS_TAG);
+
+  // Confirmation to the address they used (best effort: the account is gone either way).
+  const to = user.email || user.new_email;
+  if (to) await sendEmail(to, accountDeletedEmail({ name: profile?.first_name || profile?.display_name || "" }));
   return { ok: true };
 }

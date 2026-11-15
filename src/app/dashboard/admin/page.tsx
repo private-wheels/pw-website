@@ -1,6 +1,8 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getAdmin } from "@/lib/server/admin";
 import { AdminListingRow, timeAgo } from "@/components/admin/admin-listing-row";
+import { LaunchEmails } from "@/components/admin/launch-emails";
+import { isPreLaunch } from "@/lib/site";
 
 export const metadata = { title: "Admin · Review queue" };
 
@@ -8,12 +10,17 @@ export default async function AdminReviewQueuePage() {
   if (!(await getAdmin())) return null;
   const db = createAdminClient();
 
-  const [{ data: inReview }, { data: awaitingSeller }, { data: live }, { data: counts }] =
+  const [{ data: inReview }, { data: awaitingSeller }, { data: live }, { data: counts }, { count: launchEmailsOwed }] =
     await Promise.all([
       db.from("listings").select("*").eq("status", "pending_review").order("updated_at", { ascending: true }),
       db.from("listings").select("*").eq("status", "changes_requested").order("updated_at", { ascending: true }),
       db.from("listings").select("*").eq("status", "active").not("edited_at", "is", null),
       db.from("listings").select("status, seller_id"),
+      db
+        .from("listings")
+        .select("id", { count: "exact", head: true })
+        .eq("launch_email_pending", true)
+        .eq("status", "active"),
     ]);
 
   const editedAfterApproval = (live ?? [])
@@ -32,6 +39,7 @@ export default async function AdminReviewQueuePage() {
 
   return (
     <div className="flex flex-col gap-10">
+      {!isPreLaunch() && (launchEmailsOwed ?? 0) > 0 && <LaunchEmails count={launchEmailsOwed ?? 0} />}
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
         {stats.map((s) => (
           <div key={s.label} className="rounded-2xl border bg-card p-5">
