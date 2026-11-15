@@ -30,8 +30,8 @@ export default function ComingSoonPage() {
         </h1>
         <p className="mx-auto mt-4 max-w-md text-base leading-[1.5] text-muted-foreground">
           Owner to owner — no dealer in the middle, no mark-up. List now for{" "}
-          <span className="font-semibold text-foreground">{formatFee(FOUNDING_FEE_CENTS)}</span>{" "}
-          as a founding seller ({formatFee(LISTING_FEE_CENTS)} after launch) and your car will be one
+          <span className="font-semibold text-foreground">{formatFee(FOUNDING_FEE_CENTS)} per listing</span>{" "}
+          as a founding seller ({formatFee(LISTING_FEE_CENTS)} per listing after launch) and your car will be one
           of the first buyers see on launch day.
         </p>
 

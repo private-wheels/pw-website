@@ -212,7 +212,7 @@ function Verify() {
       <Outcome icon={<CheckCircle2 className="h-12 w-12 text-green-600" strokeWidth={1.5} />} title="You're verified">
         <p>
           Thanks! Your identity check is complete, and you won&apos;t need to do it again.
-          {unpaidListingId ? " Now pay the once-off listing fee and we'll review your listing." : ""}
+          {unpaidListingId ? " Now pay the listing fee for your car and we'll review your listing." : ""}
         </p>
         {unpaidListingId ? (
           <Button size="lg" className="mt-2 rounded-full bg-primary hover:bg-primary/90" disabled={busy} onClick={handlePay}>
