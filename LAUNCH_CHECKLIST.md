@@ -100,8 +100,9 @@ Paystack test card: `4084 0840 8408 4081`, any future expiry, CVV `408`.
       `[EFFECTIVE DATE]` in `src/lib/legal.ts`.
 - [ ] Attorney review of `/legal/privacy`, `/legal/terms`, `/legal/refunds` and `/legal/paia`
       (skipped for now; worth doing before launch day).
-- [x] Register the Information Officer (Wilhelm Stoltz) with the Information
-      Regulator (inforegulator.org.za).
+- [ ] Register the Information Officer (Wilhelm Stoltz) with the Information
+      Regulator (eservices.inforegulator.org.za). His user profile exists; still to
+      do: register PRIVATEWHEELS (PTY) LTD under it and name him Information Officer.
 - [x] **PAIA manual:** required for all private bodies since the small-business exemption
       lapsed on 31 Dec 2021. Published at `/legal/paia` (linked with the other policies).
 

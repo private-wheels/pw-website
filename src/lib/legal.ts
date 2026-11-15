@@ -20,7 +20,6 @@ export const BUSINESS = {
   email: "hello@private-wheels.co.za",
   phone: "+27 82 813 9950",
   website: "https://www.private-wheels.co.za",
-  /** Registered with the Information Regulator. */
   informationOfficer: "Wilhelm Stoltz (Director)",
   informationOfficerEmail: "hello@private-wheels.co.za",
 } as const;
