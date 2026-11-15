@@ -11,6 +11,7 @@ import { publishWithoutPayment } from "@/app/actions/admin";
 import { useListingFee } from "@/hooks/use-listing-fee";
 import { LISTING_FEE_CENTS, formatFee } from "@/lib/payments";
 import { AuthError, currentAccessToken, linkEmail, login } from "@/lib/store/auth";
+import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import { fetchListing } from "@/lib/store/listings";
 import { PaymentError, goToCheckout } from "@/lib/store/payments";
 import type { Vehicle } from "@/lib/types";
@@ -66,6 +67,16 @@ function AccountStep() {
     // Already has a real account: the draft is saved to it.
     if (!loading && user && !user.isAnonymous && savingDraft) router.replace("/dashboard");
   }, [loading, user, router, savingDraft]);
+
+  // A temporary account that already gave its email (listing another car
+  // before confirming it): no need to ask for it again.
+  const [knownEmail, setKnownEmail] = useState<string | null>(null);
+  useEffect(() => {
+    if (!user?.isAnonymous) return;
+    getSupabaseBrowserClient()
+      .auth.getUser()
+      .then(({ data }) => setKnownEmail(data.user?.new_email ?? null));
+  }, [user?.isAnonymous]);
 
   useEffect(() => {
     if (!user || !listingId) return;
@@ -153,14 +164,19 @@ function AccountStep() {
       ? "Your draft"
       : "Your listing";
 
-  if (draftEmailSentTo) {
+  // Their email is already on file: a draft is saved to it as it is.
+  const draftSavedTo = draftEmailSentTo ?? (savingDraft && user.isAnonymous ? knownEmail : null);
+  // Listing another car before confirming: go straight on to pay.
+  const emailOnFile = !savingDraft && user.isAnonymous ? knownEmail : null;
+
+  if (draftSavedTo) {
     return (
       <div className="mx-auto flex max-w-md flex-col items-center gap-4 px-4 py-16 text-center">
         <MailCheck className="h-12 w-12 text-primary" strokeWidth={1.5} />
         <h1 className="text-2xl font-semibold tracking-tight">Check your inbox</h1>
         <p className="text-sm text-muted-foreground">
           <span className="font-medium text-foreground">{title}</span> is saved as a draft. We&apos;ve sent a link to{" "}
-          <span className="font-medium text-foreground">{draftEmailSentTo}</span>: open it to confirm your email and set a
+          <span className="font-medium text-foreground">{draftSavedTo}</span>: open it to confirm your email and set a
           password. Your draft will be waiting in your dashboard.
         </p>
         <p className="text-xs text-muted-foreground">Can&apos;t see it? Check your spam folder.</p>
@@ -177,7 +193,7 @@ function AccountStep() {
       <h1 className="mt-1 text-2xl font-semibold tracking-tight">
         {savingDraft
           ? "Sign in or create an account"
-          : user.isAnonymous
+          : user.isAnonymous && !emailOnFile
             ? "Where should we send updates?"
             : "Ready to publish"}
       </h1>
@@ -192,7 +208,9 @@ function AccountStep() {
             <span className="font-medium text-foreground">{title}</span> is saved.{" "}
           </>
         )}
-        {savingDraft ? null : user.isAnonymous
+        {savingDraft ? null : emailOnFile
+          ? `We'll send updates to ${emailOnFile}. Verify your identity if you haven't yet, then pay the listing fee for this car.`
+          : user.isAnonymous
           ? "Add your email so we can tell you when it's approved. Then you'll verify your identity and pay the listing fee for this car."
           : user.role === "admin"
             ? "As an admin, you can publish it straight away."
@@ -202,7 +220,17 @@ function AccountStep() {
       </p>
 
       <div className="mt-6 rounded-2xl border bg-card p-5">
-        {!user.isAnonymous ? (
+        {emailOnFile ? (
+          <Button
+            size="lg"
+            className="w-full rounded-full bg-primary hover:bg-primary/90"
+            disabled={busy}
+            onClick={() => void run(() => goToCheckout(listingId))}
+          >
+            {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <CreditCard className="h-4 w-4" />}
+            Continue
+          </Button>
+        ) : !user.isAnonymous ? (
           <Button
             size="lg"
             className="w-full rounded-full bg-primary hover:bg-primary/90"
@@ -321,7 +349,7 @@ function AccountStep() {
             )}
           </>
         )}
-        {!user.isAnonymous && error && <p className="mt-3 text-sm text-destructive">{error}</p>}
+        {(!user.isAnonymous || emailOnFile) && error && <p className="mt-3 text-sm text-destructive">{error}</p>}
       </div>
 
       {fee.founding && user.role !== "admin" && !savingDraft && (
