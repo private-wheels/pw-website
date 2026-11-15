@@ -103,6 +103,7 @@ Paystack test card: `4084 0840 8408 4081`, any future expiry, CVV `408`.
 - [x] Register the Information Officer (Wilhelm Stoltz) with the Information
       Regulator (eservices.inforegulator.org.za). Done 15 Nov 2026 (PRIVATEWHEELS,
       CIPC-verified; Wilhelm as Information Officer, Managing Director).
+      Registration number 2026-072230; certificate in `docs/compliance/`.
 - [ ] **PAIA annual report:** every year on the eServices portal, 1 April to 30 June
       (first one due 1 Apr to 30 Jun 2027, for the year to 31 March 2027).
 - [x] **PAIA manual:** required for all private bodies since the small-business exemption
