@@ -185,11 +185,6 @@ export function VehicleDetailClient({ id }: { id: string }) {
                 <VehiclePlaceholder seed={listing.id} />
               )}
               <div className="absolute top-3 left-3 flex flex-col items-start gap-1.5">
-                {listing.featured && (
-                  <span className="shadow-pill rounded-full bg-card px-3 py-1.5 text-xs font-semibold">
-                    Featured
-                  </span>
-                )}
                 {hasPriceDrop && (
                   <span className="rounded-full bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground">
                     Price drop

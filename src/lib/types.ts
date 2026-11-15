@@ -69,7 +69,6 @@ export interface Vehicle {
   features: string[];
   description: string;
   images: string[];
-  featured: boolean;
   status: ListingStatus;
   /** Admin feedback shown to the seller (changes requested / rejected). */
   reviewNote?: string;
@@ -83,7 +82,7 @@ export interface Vehicle {
 /** What a seller submits from the listing wizard. */
 export type NewVehicleInput = Omit<
   Vehicle,
-  "id" | "sellerId" | "createdAt" | "status" | "featured" | "originalPrice" | "reviewNote"
+  "id" | "sellerId" | "createdAt" | "status" | "originalPrice" | "reviewNote"
 >;
 
 /** The signed-in user: Supabase Auth account + their `profiles` row. */

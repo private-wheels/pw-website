@@ -44,7 +44,6 @@ interface VehicleTemplate {
   images?: string[];
   /** Days before "now" the listing went live — controls "Just added" ordering. */
   listedDaysAgo?: number;
-  featured?: boolean;
 }
 
 const TEMPLATES: VehicleTemplate[] = [
@@ -116,7 +115,6 @@ const TEMPLATES: VehicleTemplate[] = [
       "/listings/bmw-x1-sdrive18d/06.jpg",
     ],
     listedDaysAgo: 0,
-    featured: true,
     features: [
       "M Sport Package",
       "Sensatec Leather Upholstery",
@@ -234,7 +232,6 @@ export const VEHICLES: Vehicle[] = TEMPLATES.map((t, i) => {
       t.description ??
       `${t.year} ${t.make} ${t.model} ${t.variant} in ${condition.toLowerCase()} condition. ${serviceHistory}. Well looked after and ready for its next owner in ${town}, ${province}.`,
     images: t.images ?? [],
-    featured: t.featured ?? i % 5 === 0,
     status: "active",
     sellerId: seller.id,
     sellerName: seller.name,
@@ -242,10 +239,6 @@ export const VEHICLES: Vehicle[] = TEMPLATES.map((t, i) => {
     createdAt: daysAgoISO(t.listedDaysAgo ?? i * 2 + 1),
   };
 });
-
-export function getFeaturedVehicles(limit = 9): Vehicle[] {
-  return VEHICLES.filter((v) => v.featured).slice(0, limit);
-}
 
 export function getLatestVehicles(limit = 8): Vehicle[] {
   return [...VEHICLES]

@@ -42,7 +42,6 @@ export function rowToVehicle(row: ListingRow): Vehicle {
     features: row.features,
     description: row.description,
     images: row.images,
-    featured: row.featured,
     status: row.status as ListingStatus,
     reviewNote: row.review_note,
     sellerId: row.seller_id ?? "",
