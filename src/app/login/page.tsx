@@ -12,6 +12,7 @@ import { CaptchaError, useTurnstile } from "@/components/turnstile";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { track } from "@/lib/analytics";
 
 export default function LoginPage() {
   return (
@@ -50,6 +51,7 @@ function LoginForm() {
     try {
       const token = await captcha.getToken();
       await login(email, password, token);
+      track("login");
       router.push(safeNext(searchParams.get("next")));
       router.refresh();
     } catch (err) {

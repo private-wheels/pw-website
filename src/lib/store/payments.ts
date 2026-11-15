@@ -1,4 +1,5 @@
 import { startListingCheckout } from "@/app/actions/payments";
+import { track } from "@/lib/analytics";
 
 export class PaymentError extends Error {}
 
@@ -15,5 +16,6 @@ export async function goToCheckout(listingId: string): Promise<void> {
     return;
   }
   if ("error" in result) throw new PaymentError(result.error);
+  track("checkout_started");
   window.location.assign(result.url);
 }

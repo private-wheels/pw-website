@@ -3,6 +3,7 @@
 import { useState, type FormEvent } from "react";
 import { Loader2, Send } from "lucide-react";
 import { sendEnquiry } from "@/app/actions/enquiry";
+import { track } from "@/lib/analytics";
 import type { Vehicle } from "@/lib/types";
 import { CaptchaError, useTurnstile } from "@/components/turnstile";
 import { Button } from "@/components/ui/button";
@@ -34,6 +35,7 @@ export function EnquiryForm({ listing, onSent }: { listing: Vehicle; onSent: () 
       const captchaToken = await captcha.getToken();
       const result = await sendEnquiry({ listingId: listing.id, name, email, phone, message, captchaToken, website });
       if (result.ok) {
+        track("enquiry_sent");
         onSent();
         return;
       }

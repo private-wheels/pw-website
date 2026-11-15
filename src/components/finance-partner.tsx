@@ -1,6 +1,7 @@
 import Image from "next/image";
 import { ArrowUpRight } from "lucide-react";
 import { FINANCE_PARTNER } from "@/lib/finance-partner";
+import { FinanceApplyLink } from "@/components/finance-apply-link";
 import { cn } from "@/lib/utils";
 
 /** The partner's logo. Its white background blends into the block (multiply). Set the height with `className`. */
@@ -29,10 +30,8 @@ function PartnerHeading() {
 
 function ApplyButton({ className }: { className?: string }) {
   return (
-    <a
+    <FinanceApplyLink
       href={FINANCE_PARTNER.applyUrl}
-      target="_blank"
-      rel="noopener noreferrer"
       className={cn(
         "inline-flex h-11 shrink-0 items-center justify-center gap-1.5 rounded-full bg-primary px-5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90",
         className,
@@ -40,7 +39,7 @@ function ApplyButton({ className }: { className?: string }) {
     >
       Apply for finance
       <ArrowUpRight className="h-4 w-4" />
-    </a>
+    </FinanceApplyLink>
   );
 }
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Check, ChevronLeft, ChevronRight, Loader2, Save, Sparkles } from "lucide-react";
@@ -54,6 +54,7 @@ import { HelpCallout } from "@/components/help-callout";
 import { ListingPreviewCard } from "@/components/listing-preview-card";
 import { PhotoUploader } from "@/components/photo-uploader";
 import { type ListingPhoto, fromPhotos, listViews, missingViews, toPhotos } from "@/lib/listing-photos";
+import { track } from "@/lib/analytics";
 
 export interface FormState {
   make: string;
@@ -242,6 +243,10 @@ export function ListingWizard({
   // The saved draft this wizard is writing to, once there is one.
   const [draftId, setDraftId] = useState<string | null>(finishingDraft ? existingListing.id : null);
   const [savingDraft, setSavingDraft] = useState(false);
+
+  useEffect(() => {
+    if (mode === "create") track("listing_started");
+  }, [mode]);
   // Photos uploaded in this session can be deleted from storage as soon as
   // they're removed. Photos already saved on the listing are only deleted
   // once the edit is saved, so abandoning the edit doesn't break the listing.
@@ -328,6 +333,7 @@ export function ListingWizard({
         router.push(`/list/account?listing=${saved.id}&draft=1`);
         return;
       }
+      track("listing_draft_saved");
       toast.success("Draft saved. You'll find it in your dashboard whenever you're ready to finish it.");
     } catch (err) {
       console.error(err);
@@ -378,6 +384,7 @@ export function ListingWizard({
       if (draftId) {
         // A saved draft becomes the listing, ready to verify and pay.
         created = await updateListing(draftId, payload, { finishDraft: true });
+        track("listing_submitted", { from_draft: true });
         await deleteListingPhotos(removedSavedPhotos);
       } else if (mode === "edit" && existingListing) {
         await updateListing(existingListing.id, payload);
@@ -391,6 +398,7 @@ export function ListingWizard({
         }
       } else {
         created = await createListing(payload);
+        track("listing_submitted", { from_draft: false });
       }
     } catch (err) {
       console.error(err);

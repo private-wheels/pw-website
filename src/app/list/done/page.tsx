@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { CheckCircle2, Clock, Loader2, MailCheck, Plus, XCircle } from "lucide-react";
 import { useAuth } from "@/context/auth-context";
+import { track } from "@/lib/analytics";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import { PaymentError, goToCheckout } from "@/lib/store/payments";
 import { HelpCallout } from "@/components/help-callout";
@@ -38,6 +39,11 @@ function Done() {
     if (!user) router.replace("/list");
     else if (!user.isAnonymous) router.replace(`/dashboard${window.location.search}`);
   }, [loading, user, router]);
+
+  // /list sellers land here after paying (signed-in sellers on the dashboard).
+  useEffect(() => {
+    if (outcome === "success") track("payment_completed");
+  }, [outcome]);
 
   useEffect(() => {
     getSupabaseBrowserClient()
