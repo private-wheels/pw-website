@@ -29,6 +29,7 @@ import type { Vehicle } from "@/lib/types";
 import { formatCurrency, formatDateShort, formatMileage } from "@/lib/format";
 import { getPriceRating, type PriceRating } from "@/lib/filter";
 import { FinanceCalculator } from "@/components/finance-calculator";
+import { FinancePartner } from "@/components/finance-partner";
 import { VehiclePlaceholder } from "@/components/vehicle-placeholder";
 import { VehicleMedia } from "@/components/vehicle-media";
 import { VehicleCard } from "@/components/vehicle-card";
@@ -184,11 +185,6 @@ export function VehicleDetailClient({ id }: { id: string }) {
                 <VehiclePlaceholder seed={listing.id} />
               )}
               <div className="absolute top-3 left-3 flex flex-col items-start gap-1.5">
-                {listing.featured && (
-                  <span className="shadow-pill rounded-full bg-card px-3 py-1.5 text-xs font-semibold">
-                    Featured
-                  </span>
-                )}
                 {hasPriceDrop && (
                   <span className="rounded-full bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground">
                     Price drop
@@ -370,6 +366,7 @@ export function VehicleDetailClient({ id }: { id: string }) {
                   </DialogHeader>
                   <div className="max-h-[70vh] overflow-y-auto pr-1">
                     <FinanceCalculator initialPrice={String(listing.price)} />
+                    <FinancePartner compact className="mt-6" />
                   </div>
                 </DialogContent>
               </Dialog>

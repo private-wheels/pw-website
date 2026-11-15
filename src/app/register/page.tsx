@@ -3,12 +3,12 @@
 import { useState, type FormEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { MailCheck, UserPlus } from "lucide-react";
+import { Loader2, MailCheck, UserPlus } from "lucide-react";
 import { useAuth } from "@/context/auth-context";
 import { AFTER_SIGN_IN_PATH } from "@/lib/identity";
 import { AuthError } from "@/lib/store/auth";
 import { AuthSplitLayout } from "@/components/auth-split-layout";
-import { useTurnstile } from "@/components/turnstile";
+import { CaptchaError, useTurnstile } from "@/components/turnstile";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
@@ -56,7 +56,8 @@ export default function RegisterPage() {
 
     setSubmitting(true);
     try {
-      const { needsConfirmation } = await register(email, password, firstName, WELCOME_PATH, captcha.token);
+      const token = await captcha.getToken();
+      const { needsConfirmation } = await register(email, password, firstName, WELCOME_PATH, token);
       if (needsConfirmation) {
         setConfirmationSentTo(email.trim());
         setSubmitting(false);
@@ -65,9 +66,11 @@ export default function RegisterPage() {
       router.push(WELCOME_PATH);
       router.refresh();
     } catch (err) {
-      setError(err instanceof AuthError ? err.message : "Something went wrong. Please try again.");
+      setError(
+        err instanceof AuthError || err instanceof CaptchaError ? err.message : "Something went wrong. Please try again.",
+      );
       setSubmitting(false);
-      captcha.reset();
+      if (!(err instanceof CaptchaError)) captcha.reset();
     }
   }
 
@@ -193,11 +196,11 @@ export default function RegisterPage() {
         <Button
           type="submit"
           size="lg"
-          disabled={submitting || !acceptedTerms || !captcha.ready}
+          disabled={submitting}
           className="mt-2 rounded-full bg-primary hover:bg-primary/90"
         >
-          <UserPlus className="h-4 w-4" />
-          Create Account
+          {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <UserPlus className="h-4 w-4" />}
+          {submitting ? "Creating your account…" : "Create Account"}
         </Button>
       </form>
     </AuthSplitLayout>

@@ -1,10 +1,8 @@
 "use client";
 
 import type { ReactNode } from "react";
-import Link from "next/link";
 import { useListings } from "@/hooks/use-listings";
 import { countSellers } from "@/lib/make-index";
-import { BrandLogo } from "@/components/brand-mark";
 
 export function AuthSplitLayout({
   title,
@@ -23,9 +21,8 @@ export function AuthSplitLayout({
   return (
     <div className="grid min-h-[calc(100vh-5rem)] grid-cols-1 lg:grid-cols-2">
       <div className="hidden flex-col justify-between bg-muted p-10 lg:flex">
-        <Link href="/" className="flex items-center">
-          <BrandLogo className="h-6 w-auto text-primary" />
-        </Link>
+        {/* Keeps the message centred; the logo is already in the header. */}
+        <div aria-hidden />
 
         <div>
           <h2 className="max-w-sm text-3xl font-semibold tracking-tight">

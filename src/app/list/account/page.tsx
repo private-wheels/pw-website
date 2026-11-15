@@ -3,7 +3,8 @@
 import { Suspense, useEffect, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { CreditCard, Loader2, Send } from "lucide-react";
+import { toast } from "sonner";
+import { CreditCard, Loader2, MailCheck, Send } from "lucide-react";
 import { useAuth } from "@/context/auth-context";
 import { claimListing } from "@/app/actions/list";
 import { publishWithoutPayment } from "@/app/actions/admin";
@@ -14,7 +15,7 @@ import { fetchListing } from "@/lib/store/listings";
 import { PaymentError, goToCheckout } from "@/lib/store/payments";
 import type { Vehicle } from "@/lib/types";
 import { HelpCallout } from "@/components/help-callout";
-import { useTurnstile } from "@/components/turnstile";
+import { CaptchaError, useTurnstile } from "@/components/turnstile";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
@@ -30,7 +31,7 @@ export default function ListAccountPage() {
 }
 
 function message(err: unknown): string {
-  if (err instanceof AuthError || err instanceof PaymentError) return err.message;
+  if (err instanceof AuthError || err instanceof PaymentError || err instanceof CaptchaError) return err.message;
   return "Something went wrong. Please try again.";
 }
 
@@ -39,10 +40,16 @@ function message(err: unknown): string {
  * either adds an email (becoming a real account) or signs in to an existing
  * one, which takes the listing with it. Admins then publish for free;
  * everyone else verifies their identity (if they haven't yet) and pays.
+ *
+ * With `?draft=1` the seller pressed "Save draft": same choice, but they're
+ * saving it to finish later instead of paying now.
  */
 function AccountStep() {
   const router = useRouter();
-  const listingId = useSearchParams().get("listing") ?? "";
+  const searchParams = useSearchParams();
+  const listingId = searchParams.get("listing") ?? "";
+  const savingDraft = searchParams.get("draft") === "1";
+  const [draftEmailSentTo, setDraftEmailSentTo] = useState<string | null>(null);
   const { user, loading } = useAuth();
   const fee = useListingFee();
   const captcha = useTurnstile("list_login");
@@ -56,7 +63,9 @@ function AccountStep() {
 
   useEffect(() => {
     if (!loading && !user) router.replace("/list");
-  }, [loading, user, router]);
+    // Already has a real account: the draft is saved to it.
+    if (!loading && user && !user.isAnonymous && savingDraft) router.replace("/dashboard");
+  }, [loading, user, router, savingDraft]);
 
   useEffect(() => {
     if (!user || !listingId) return;
@@ -98,6 +107,11 @@ function AccountStep() {
         }
         throw err;
       }
+      if (savingDraft) {
+        setDraftEmailSentTo(email.trim());
+        setBusy(false);
+        return;
+      }
       await goToCheckout(listingId);
     });
   }
@@ -106,8 +120,9 @@ function AccountStep() {
     e.preventDefault();
     void run(async () => {
       const anonToken = await currentAccessToken();
+      const token = await captcha.getToken();
       try {
-        await login(email, password, captcha.token);
+        await login(email, password, token);
       } catch (err) {
         captcha.reset();
         throw err;
@@ -115,6 +130,11 @@ function AccountStep() {
       if (!anonToken) throw new AuthError("Your session expired. Please start your listing again.");
       const claimed = await claimListing(listingId, anonToken);
       if (!claimed.ok) throw new AuthError(claimed.error);
+      if (savingDraft) {
+        toast.success("Draft saved. Finish it from your dashboard whenever you're ready.");
+        router.push("/dashboard");
+        return;
+      }
       await payOrPublish(claimed.isAdmin);
     });
   }
@@ -127,17 +147,52 @@ function AccountStep() {
     );
   }
 
-  const title = listing ? `${listing.year} ${listing.make} ${listing.model} ${listing.variant}` : "Your listing";
+  const title = listing
+    ? [listing.year || "", listing.make, listing.model, listing.variant].filter(Boolean).join(" ") || "Your draft"
+    : savingDraft
+      ? "Your draft"
+      : "Your listing";
+
+  if (draftEmailSentTo) {
+    return (
+      <div className="mx-auto flex max-w-md flex-col items-center gap-4 px-4 py-16 text-center">
+        <MailCheck className="h-12 w-12 text-primary" strokeWidth={1.5} />
+        <h1 className="text-2xl font-semibold tracking-tight">Check your inbox</h1>
+        <p className="text-sm text-muted-foreground">
+          <span className="font-medium text-foreground">{title}</span> is saved as a draft. We&apos;ve sent a link to{" "}
+          <span className="font-medium text-foreground">{draftEmailSentTo}</span>: open it to confirm your email and set a
+          password. Your draft will be waiting in your dashboard.
+        </p>
+        <p className="text-xs text-muted-foreground">Can&apos;t see it? Check your spam folder.</p>
+        <HelpCallout className="mt-4 text-left" />
+      </div>
+    );
+  }
 
   return (
     <div className="mx-auto max-w-md px-4 py-12">
-      <p className="text-xs font-semibold tracking-wide text-primary uppercase">Almost done</p>
+      <p className="text-xs font-semibold tracking-wide text-primary uppercase">
+        {savingDraft ? "Save your draft" : "Almost done"}
+      </p>
       <h1 className="mt-1 text-2xl font-semibold tracking-tight">
-        {user.isAnonymous ? "Where should we send updates?" : "Ready to publish"}
+        {savingDraft
+          ? "Sign in or create an account"
+          : user.isAnonymous
+            ? "Where should we send updates?"
+            : "Ready to publish"}
       </h1>
       <p className="mt-2 text-sm text-muted-foreground">
-        <span className="font-medium text-foreground">{title}</span> is saved.{" "}
-        {user.isAnonymous
+        {savingDraft ? (
+          <>
+            To keep <span className="font-medium text-foreground">{title}</span> and finish it later, add your email
+            or sign in. It&apos;s saved to your account, not this browser.
+          </>
+        ) : (
+          <>
+            <span className="font-medium text-foreground">{title}</span> is saved.{" "}
+          </>
+        )}
+        {savingDraft ? null : user.isAnonymous
           ? "Add your email so we can tell you when it's approved. Then you'll verify your identity and pay the once-off listing fee."
           : user.role === "admin"
             ? "As an admin, you can publish it straight away."
@@ -221,7 +276,7 @@ function AccountStep() {
                   className="rounded-full bg-primary hover:bg-primary/90"
                 >
                   {busy && <Loader2 className="h-4 w-4 animate-spin" />}
-                  Continue
+                  {savingDraft ? "Save draft" : "Continue"}
                 </Button>
               </form>
             ) : (
@@ -253,11 +308,11 @@ function AccountStep() {
                 <Button
                   type="submit"
                   size="lg"
-                  disabled={busy || !captcha.ready}
+                  disabled={busy}
                   className="rounded-full bg-primary hover:bg-primary/90"
                 >
                   {busy && <Loader2 className="h-4 w-4 animate-spin" />}
-                  Sign in and continue
+                  {savingDraft ? "Sign in and save draft" : "Sign in and continue"}
                 </Button>
                 <p className="text-xs text-muted-foreground">
                   Your listing moves to your account when you sign in.
@@ -269,7 +324,7 @@ function AccountStep() {
         {!user.isAnonymous && error && <p className="mt-3 text-sm text-destructive">{error}</p>}
       </div>
 
-      {fee.founding && user.role !== "admin" && (
+      {fee.founding && user.role !== "admin" && !savingDraft && (
         <p className="mt-3 text-center text-xs text-muted-foreground">
           {fee.label} is the founding-seller price. Listings cost {formatFee(LISTING_FEE_CENTS)} once we launch.
         </p>

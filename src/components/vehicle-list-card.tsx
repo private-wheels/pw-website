@@ -65,12 +65,6 @@ export function VehicleListCard({
             sizes="(min-width: 1024px) 440px, (min-width: 640px) 380px, 100vw"
           />
 
-          {vehicle.featured && (
-            <span className="shadow-pill absolute top-3 left-3 rounded-full bg-card px-3 py-1 text-xs font-semibold">
-              Featured
-            </span>
-          )}
-
           <span className="absolute bottom-3 left-3 flex items-center gap-1 rounded-full bg-black/55 px-2.5 py-1 text-xs font-medium text-white">
             <Camera className="h-3.5 w-3.5" />
             {photoCount}

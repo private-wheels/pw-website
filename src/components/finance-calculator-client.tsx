@@ -4,6 +4,7 @@ import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { ArrowRight, Calculator, Clock3, ShieldCheck, TrendingUp } from "lucide-react";
 import { FinanceCalculator } from "@/components/finance-calculator";
+import { FinancePartner } from "@/components/finance-partner";
 import { SiteContainer } from "@/components/site-container";
 
 const REASSURANCE = [
@@ -50,6 +51,7 @@ export function FinanceCalculatorClient() {
       <section className="py-10 sm:py-12">
         <SiteContainer className="max-w-5xl">
           <FinanceCalculator initialPrice={prefillPrice} />
+          <FinancePartner className="mt-8" />
         </SiteContainer>
       </section>
 

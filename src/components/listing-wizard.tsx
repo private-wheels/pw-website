@@ -3,9 +3,9 @@
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Check, ChevronLeft, ChevronRight, Loader2, Sparkles } from "lucide-react";
+import { Check, ChevronLeft, ChevronRight, Loader2, Save, Sparkles } from "lucide-react";
 import { useAuth } from "@/context/auth-context";
-import { ListingError, createListing, updateListing } from "@/lib/store/listings";
+import { ListingError, createListing, saveDraft, updateListing } from "@/lib/store/listings";
 import { PaymentError, goToCheckout } from "@/lib/store/payments";
 import { useListingFee } from "@/hooks/use-listing-fee";
 import { LISTING_FEE_CENTS, formatFee } from "@/lib/payments";
@@ -29,7 +29,7 @@ import {
   ACCIDENT_HISTORY_OPTIONS,
   BODY_TYPES,
   COLOURS,
-  CONDITIONS,
+  SELLER_CONDITIONS,
   FUEL_TYPES,
   MAKES,
   PROVINCES,
@@ -105,20 +105,23 @@ const EMPTY_FORM: FormState = {
 };
 
 function vehicleToForm(v: Vehicle): FormState {
+  // Drafts store blank numbers as 0 (year, price) — show them blank again.
+  const draft = v.status === "draft";
+  const number = (n: number) => (draft && !n ? "" : String(n));
   return {
     make: v.make,
     model: v.model,
     variant: v.variant,
-    year: String(v.year),
-    price: String(v.price),
-    mileage: String(v.mileage),
+    year: number(v.year),
+    price: number(v.price),
+    mileage: number(v.mileage),
     province: v.province,
     town: v.town,
     bodyType: v.bodyType,
     transmission: v.transmission,
     fuelType: v.fuelType,
     condition: v.condition,
-    previousOwners: String(v.previousOwners),
+    previousOwners: number(v.previousOwners),
     serviceHistory: v.serviceHistory,
     accidentHistory: v.accidentHistory,
     colour: v.colour,
@@ -151,9 +154,15 @@ export function ListingWizard({
   const isAdmin = user?.role === "admin";
   const fee = useListingFee();
   const resubmitting = mode === "edit" && existingListing?.status === "changes_requested";
+  // Finishing a saved draft works like creating a new listing.
+  const finishingDraft = mode === "edit" && existingListing?.status === "draft";
+  const creating = mode === "create" || finishingDraft;
   const [step, setStep] = useState(0);
   const [form, setForm] = useState<FormState>(() => initialForm(existingListing, user));
   const [submitting, setSubmitting] = useState(false);
+  // The saved draft this wizard is writing to, once there is one.
+  const [draftId, setDraftId] = useState<string | null>(finishingDraft ? existingListing.id : null);
+  const [savingDraft, setSavingDraft] = useState(false);
   // Photos uploaded in this session can be deleted from storage as soon as
   // they're removed. Photos already saved on the listing are only deleted
   // once the edit is saved, so abandoning the edit doesn't break the listing.
@@ -201,6 +210,41 @@ export function ListingWizard({
     setStep((s) => Math.max(s - 1, 0));
   }
 
+  /**
+   * Saves what's there so far as a draft. Temporary /list accounts are asked
+   * to sign in or create an account next, so the draft has an owner they can
+   * come back to.
+   */
+  async function handleSaveDraft() {
+    if (!user) return;
+    const { make, model, year, price, images, description } = form;
+    if (!make && !model.trim() && !year && !price && images.length === 0 && !description.trim()) {
+      toast.error("Add a few details about your car first.");
+      return;
+    }
+    setSavingDraft(true);
+    try {
+      const saved = await saveDraft(draftId, form);
+      setDraftId(saved.id);
+      // Photos on the saved draft are now kept until the listing is saved
+      // without them; ones removed before this save can go now.
+      uploadedThisSession.current.clear();
+      if (removedSavedPhotos.length > 0) {
+        await deleteListingPhotos(removedSavedPhotos);
+        setRemovedSavedPhotos([]);
+      }
+      if (user.isAnonymous) {
+        router.push(`/list/account?listing=${saved.id}&draft=1`);
+        return;
+      }
+      toast.success("Draft saved. You'll find it in your dashboard whenever you're ready to finish it.");
+    } catch (err) {
+      console.error(err);
+      toast.error("We couldn't save your draft. Please try again.");
+    }
+    setSavingDraft(false);
+  }
+
   async function handlePublish() {
     if (!user) return;
     if (!form.sellerName.trim() || !form.phone.trim()) {
@@ -236,7 +280,11 @@ export function ListingWizard({
 
     let created: Vehicle | null = null;
     try {
-      if (mode === "edit" && existingListing) {
+      if (draftId) {
+        // A saved draft becomes the listing, ready to verify and pay.
+        created = await updateListing(draftId, payload, { finishDraft: true });
+        await deleteListingPhotos(removedSavedPhotos);
+      } else if (mode === "edit" && existingListing) {
         await updateListing(existingListing.id, payload);
         await deleteListingPhotos(removedSavedPhotos);
         if (resubmitting) {
@@ -322,7 +370,7 @@ export function ListingWizard({
       )}
 
       <h1 className="text-2xl font-semibold tracking-tight">
-        {mode === "edit" ? "Edit listing" : "Create a new listing"}
+        {finishingDraft ? "Finish your listing" : mode === "edit" ? "Edit listing" : "Create a new listing"}
       </h1>
 
       {/* Step indicator */}
@@ -430,7 +478,7 @@ export function ListingWizard({
                   <SelectValue>{(v: string | null) => v || "Select condition"}</SelectValue>
                 </SelectTrigger>
                 <SelectContent>
-                  {CONDITIONS.map((c) => (
+                  {[...SELLER_CONDITIONS, ...(form.condition === "Demo" ? (["Demo"] as const) : [])].map((c) => (
                     <SelectItem key={c} value={c}>
                       {c}
                     </SelectItem>
@@ -653,7 +701,7 @@ export function ListingWizard({
                 <p className="mt-1 text-sm">{form.description}</p>
               </div>
             )}
-            {mode === "create" && !isAdmin && (
+            {creating && !isAdmin && (
               <p className="rounded-lg border bg-muted/40 p-4 text-sm text-muted-foreground">
                 Listing your car costs a once-off{" "}
                 <span className="font-semibold text-foreground">{fee.label}</span>
@@ -665,7 +713,7 @@ export function ListingWizard({
                 one working day, and it goes live once it&apos;s approved.
               </p>
             )}
-            {mode === "create" && isAdmin && (
+            {creating && isAdmin && (
               <p className="rounded-lg border bg-muted/40 p-4 text-sm text-muted-foreground">
                 As an admin, your listing is published straight away. No payment or review needed.
               </p>
@@ -684,33 +732,46 @@ export function ListingWizard({
           <ChevronLeft className="h-4 w-4" />
           Back
         </Button>
-        {step < STEPS.length - 1 ? (
-          <Button
-            onClick={goNext}
-            disabled={step === 0 && !canContinueStep0}
-            className="rounded-full bg-foreground text-background hover:opacity-90"
-          >
-            Next
-            <ChevronRight className="h-4 w-4" />
-          </Button>
-        ) : (
-          <Button
-            onClick={() => void handlePublish()}
-            disabled={submitting}
-            className="rounded-full bg-primary hover:bg-primary/90"
-          >
-            {submitting && <Loader2 className="h-4 w-4 animate-spin" />}
-            {resubmitting
-              ? "Save & Resubmit"
-              : mode === "edit"
-                ? "Save Changes"
-                : user?.isAnonymous
-                  ? "Continue"
-                  : isAdmin
-                  ? "Publish Listing"
-                  : `Continue to Payment · ${fee.label}`}
-          </Button>
-        )}
+        <div className="flex flex-wrap justify-end gap-2">
+          {creating && (
+            <Button
+              variant="ghost"
+              className="rounded-full"
+              onClick={() => void handleSaveDraft()}
+              disabled={savingDraft || submitting}
+            >
+              {savingDraft ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+              Save draft
+            </Button>
+          )}
+          {step < STEPS.length - 1 ? (
+            <Button
+              onClick={goNext}
+              disabled={step === 0 && !canContinueStep0}
+              className="rounded-full bg-foreground text-background hover:opacity-90"
+            >
+              Next
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          ) : (
+            <Button
+              onClick={() => void handlePublish()}
+              disabled={submitting || savingDraft}
+              className="rounded-full bg-primary hover:bg-primary/90"
+            >
+              {submitting && <Loader2 className="h-4 w-4 animate-spin" />}
+              {resubmitting
+                ? "Save & Resubmit"
+                : !creating
+                  ? "Save Changes"
+                  : user?.isAnonymous
+                    ? "Continue"
+                    : isAdmin
+                      ? "Publish Listing"
+                      : `Continue to Payment · ${fee.label}`}
+            </Button>
+          )}
+        </div>
       </div>
       <HelpCallout className="mt-6" />
       </div>

@@ -31,7 +31,7 @@ export type Database = {
           original_price: number | null;
           paid_at: string | null;
           previous_owners: number;
-          price: number;
+          price: number | null;
           province: string;
           seller_id: string | null;
           seller_name: string;
@@ -42,7 +42,7 @@ export type Database = {
           transmission: string;
           updated_at: string;
           variant: string;
-          year: number;
+          year: number | null;
         };
         Insert: {
           approved_at?: string | null;
@@ -67,7 +67,7 @@ export type Database = {
           original_price?: number | null;
           paid_at?: string | null;
           previous_owners?: number;
-          price: number;
+          price?: number | null;
           province: string;
           seller_id?: string | null;
           seller_name: string;
@@ -78,7 +78,7 @@ export type Database = {
           transmission: string;
           updated_at?: string;
           variant?: string;
-          year: number;
+          year?: number | null;
         };
         Update: {
           approved_at?: string | null;
@@ -103,7 +103,7 @@ export type Database = {
           original_price?: number | null;
           paid_at?: string | null;
           previous_owners?: number;
-          price?: number;
+          price?: number | null;
           province?: string;
           seller_id?: string | null;
           seller_name?: string;
@@ -114,7 +114,7 @@ export type Database = {
           transmission?: string;
           updated_at?: string;
           variant?: string;
-          year?: number;
+          year?: number | null;
         };
         Relationships: [];
       };

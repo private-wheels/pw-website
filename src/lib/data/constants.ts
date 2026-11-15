@@ -54,6 +54,8 @@ export const TRANSMISSIONS: Transmission[] = ["Manual", "Automatic", "Semi-Autom
 export const FUEL_TYPES: FuelType[] = ["Petrol", "Diesel", "Hybrid", "Electric"];
 
 export const CONDITIONS = ["New", "Used", "Demo"] as const;
+/** What private sellers can pick ("Demo" is a dealer category). */
+export const SELLER_CONDITIONS = ["New", "Used"] as const;
 
 export const SERVICE_HISTORY_OPTIONS: ServiceHistory[] = [
   "Full Service History (Agents)",

@@ -1,6 +1,6 @@
 import type { ListingStatus, NewVehicleInput, Vehicle } from "@/lib/types";
 import { refreshListings } from "@/app/actions/listings";
-import { rowToVehicle, vehicleInputToRow } from "@/lib/listings";
+import { type DraftInput, draftToRow, rowToVehicle, vehicleInputToRow } from "@/lib/listings";
 import { deleteListingPhotos } from "@/lib/storage";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 
@@ -49,16 +49,39 @@ export async function createListing(input: NewVehicleInput): Promise<Vehicle> {
   return rowToVehicle(data);
 }
 
-export async function updateListing(id: string, input: NewVehicleInput): Promise<Vehicle> {
+/**
+ * Saves the full listing. `finishDraft` also moves a draft on to
+ * `pending_payment`, ready to verify and pay.
+ */
+export async function updateListing(
+  id: string,
+  input: NewVehicleInput,
+  { finishDraft = false }: { finishDraft?: boolean } = {},
+): Promise<Vehicle> {
   const { data, error } = await getSupabaseBrowserClient()
     .from("listings")
-    .update(vehicleInputToRow(input))
+    .update({ ...vehicleInputToRow(input), ...(finishDraft ? { status: "pending_payment" } : {}) })
     .eq("id", id)
     .select()
     .single();
 
   if (error) throw new ListingError(error.message);
   await refreshListings();
+  return rowToVehicle(data);
+}
+
+/**
+ * Saves a half-finished listing as a draft (only the seller can see it). Blank
+ * fields stay blank. Pass the draft's id to update it, or null to create one.
+ */
+export async function saveDraft(id: string | null, input: DraftInput): Promise<Vehicle> {
+  const row = { ...draftToRow(input), status: "draft" as const };
+  const db = getSupabaseBrowserClient().from("listings");
+  const { data, error } = id
+    ? await db.update(row).eq("id", id).eq("status", "draft").select().single()
+    : await db.insert(row).select().single();
+
+  if (error) throw new ListingError(error.message);
   return rowToVehicle(data);
 }
 

@@ -54,6 +54,12 @@ export default function TermsOfUsePage() {
             as anyone&apos;s agent.
           </strong>
         </p>
+        <p>
+          We link to our finance partner, Future Car Finance, so buyers can apply for vehicle
+          finance on their online application. We don&apos;t provide credit or credit
+          advice, and we don&apos;t see your application. Any finance agreement is between
+          you and the finance provider, on their terms.
+        </p>
         <p>Any sale is a private agreement between the buyer and the seller. That means:</p>
         <ul>
           <li>

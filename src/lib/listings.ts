@@ -24,8 +24,9 @@ export function rowToVehicle(row: ListingRow): Vehicle {
     make: row.make,
     model: row.model,
     variant: row.variant,
-    year: row.year,
-    price: row.price,
+    // Blank only on drafts.
+    year: row.year ?? 0,
+    price: row.price ?? 0,
     ...(row.original_price ? { originalPrice: row.original_price } : {}),
     mileage: row.mileage,
     transmission: row.transmission as Transmission,
@@ -41,7 +42,6 @@ export function rowToVehicle(row: ListingRow): Vehicle {
     features: row.features,
     description: row.description,
     images: row.images,
-    featured: row.featured,
     status: row.status as ListingStatus,
     reviewNote: row.review_note,
     sellerId: row.seller_id ?? "",
@@ -99,4 +99,65 @@ const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
 /** Listing ids are UUIDs; anything else can't exist (and would error in Postgres). */
 export function isListingId(id: string): boolean {
   return UUID_RE.test(id);
+}
+
+/**
+ * A listing still being written: everything as typed in the wizard, so any
+ * field may be blank. Only `draft` listings may be saved like this.
+ */
+export type DraftInput = {
+  make: string;
+  model: string;
+  variant: string;
+  year: string;
+  price: string;
+  mileage: string;
+  province: string;
+  town: string;
+  bodyType: string;
+  transmission: string;
+  fuelType: string;
+  condition: string;
+  previousOwners: string;
+  serviceHistory: string;
+  accidentHistory: string;
+  colour: string;
+  features: string[];
+  description: string;
+  images: string[];
+  sellerName: string;
+  phone: string;
+};
+
+/** Whole numbers within `max`, or null when blank (or not a number). */
+function wholeNumber(value: string, max: number): number | null {
+  const n = Math.round(Number(value.replace(/[\s,]/g, "")));
+  return value.trim() && Number.isFinite(n) && n >= 0 && n <= max ? n : null;
+}
+
+export function draftToRow(d: DraftInput) {
+  const year = wholeNumber(d.year, 2100);
+  return {
+    seller_name: d.sellerName.trim().slice(0, 80),
+    seller_phone: d.phone.trim().slice(0, 30),
+    make: d.make.slice(0, 60),
+    model: d.model.trim().slice(0, 80),
+    variant: d.variant.trim().slice(0, 120),
+    year: year !== null && year >= 1900 ? year : null,
+    price: wholeNumber(d.price, 2_000_000_000),
+    mileage: wholeNumber(d.mileage, 2_000_000_000) ?? 0,
+    transmission: d.transmission,
+    fuel_type: d.fuelType,
+    body_type: d.bodyType,
+    province: d.province,
+    town: d.town.trim().slice(0, 80),
+    condition: d.condition,
+    previous_owners: Math.min(wholeNumber(d.previousOwners, 50) ?? 0, 50),
+    service_history: d.serviceHistory,
+    accident_history: d.accidentHistory,
+    colour: d.colour.slice(0, 40),
+    features: d.features.slice(0, 60),
+    description: d.description.slice(0, 5000),
+    images: d.images.slice(0, 20),
+  };
 }

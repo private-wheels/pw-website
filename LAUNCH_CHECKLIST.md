@@ -99,15 +99,9 @@ Paystack test card: `4084 0840 8408 4081`, any future expiry, CVV `408`.
 
 ## 6. Launch day
 
-- [ ] **Delete the demo listings.** The 43 seeded cars are the only rows with
-      no seller. In the Supabase SQL editor:
-
-      ```sql
-      delete from public.listings where seller_id is null;
-      ```
-
-      Their photos are static files in `public/listings/` (not in Storage).
-      Optionally remove `public/listings/bmw-x1-sdrive18d/` afterwards.
+- [x] **Delete the demo listings.** Done 15 Nov 2026, together with every
+      test listing (47 in all) and their uploaded photos. Optionally remove
+      the demo photos in `public/listings/bmw-x1-sdrive18d/` too.
 - [ ] **Vercel: `SITE_LAUNCHED=true`** and redeploy. The marketplace opens,
       approved founding listings go live, and new listings cost R249 (unless
       `FOUNDING_PRICE=on`).

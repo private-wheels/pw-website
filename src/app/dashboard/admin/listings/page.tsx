@@ -26,6 +26,8 @@ export default async function AdminListingsPage({
   let query = createAdminClient().from("listings").select("*").order("created_at", { ascending: false });
   if (status === "demo") query = query.is("seller_id", null);
   else if (status) query = query.eq("status", status);
+  // Drafts are a seller's unfinished work, not something to review.
+  else query = query.neq("status", "draft");
 
   // Strip characters that have meaning in PostgREST's or() syntax.
   const term = q.replace(/[,()*%\\]/g, " ").trim();

@@ -11,6 +11,7 @@ import {
 import { formatCurrency } from "@/lib/format";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { InfoTip } from "@/components/ui/info-tip";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Select,
@@ -88,7 +89,12 @@ export function FinanceCalculator({ initialPrice = "" }: { initialPrice?: string
                 />
               </div>
               <div className="flex flex-col gap-1.5">
-                <Label>Deposit (R)</Label>
+                <div className="flex items-center gap-1.5">
+                  <Label>Deposit (R)</Label>
+                  <InfoTip label="deposit">
+                    Cash you pay upfront. It comes off the price, so you borrow less. Leave it blank if you&apos;re not putting down a deposit.
+                  </InfoTip>
+                </div>
                 <Input
                   type="number"
                   placeholder="e.g. 50000"
@@ -97,7 +103,12 @@ export function FinanceCalculator({ initialPrice = "" }: { initialPrice?: string
                 />
               </div>
               <div className="flex flex-col gap-1.5">
-                <Label>Interest Rate (% per annum)</Label>
+                <div className="flex items-center gap-1.5">
+                  <Label>Interest Rate (% per annum)</Label>
+                  <InfoTip label="interest rate">
+                    The yearly rate the bank charges you. Banks usually quote it as prime plus a margin, depending on your credit record. If you have a finance quote, use its rate.
+                  </InfoTip>
+                </div>
                 <Input
                   type="number"
                   step="0.01"
@@ -109,7 +120,12 @@ export function FinanceCalculator({ initialPrice = "" }: { initialPrice?: string
                 </p>
               </div>
               <div className="flex flex-col gap-1.5">
-                <Label>Repayment Term (Months)</Label>
+                <div className="flex items-center gap-1.5">
+                  <Label>Repayment Term (Months)</Label>
+                  <InfoTip label="repayment term">
+                    How long you take to pay the loan back. A longer term means smaller instalments, but more interest in total.
+                  </InfoTip>
+                </div>
                 <Select value={term} onValueChange={(v) => v && setTerm(v)}>
                   <SelectTrigger className="w-full">
                     <SelectValue>
@@ -129,7 +145,12 @@ export function FinanceCalculator({ initialPrice = "" }: { initialPrice?: string
                 </Select>
               </div>
               <div className="flex flex-col gap-1.5">
-                <Label>Balloon Payment (%)</Label>
+                <div className="flex items-center gap-1.5">
+                  <Label>Balloon Payment (%)</Label>
+                  <InfoTip label="balloon payment">
+                    A lump sum you still owe at the end of the term, as a percentage of the amount financed. It lowers your instalments, but you&apos;ll need to pay it off (or refinance it) when the term ends.
+                  </InfoTip>
+                </div>
                 <Select value={balloon} onValueChange={(v) => v && setBalloon(v)}>
                   <SelectTrigger className="w-full">
                     <SelectValue>
@@ -163,27 +184,39 @@ export function FinanceCalculator({ initialPrice = "" }: { initialPrice?: string
                 </p>
                 <div className="mt-6 flex flex-col gap-3 border-t pt-6 text-sm">
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">Amount Financed</span>
+                    <span className="flex items-center gap-1.5 text-muted-foreground">
+                      Amount Financed
+                      <InfoTip label="amount financed">The vehicle price minus your deposit: what you borrow.</InfoTip>
+                    </span>
                     <span className="font-semibold">
                       {formatCurrency(instalmentResult.principal)}
                     </span>
                   </div>
                   {instalmentResult.balloonAmount > 0 && (
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">Balloon Payment</span>
+                      <span className="flex items-center gap-1.5 text-muted-foreground">
+                      Balloon Payment
+                      <InfoTip label="balloon payment">The lump sum still owed at the end of the term.</InfoTip>
+                    </span>
                       <span className="font-semibold">
                         {formatCurrency(instalmentResult.balloonAmount)}
                       </span>
                     </div>
                   )}
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">Total Interest</span>
+                    <span className="flex items-center gap-1.5 text-muted-foreground">
+                      Total Interest
+                      <InfoTip label="total interest">What the loan costs you on top of the amount financed, over the whole term.</InfoTip>
+                    </span>
                     <span className="font-semibold">
                       {formatCurrency(instalmentResult.totalInterest)}
                     </span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">Total Repayment</span>
+                    <span className="flex items-center gap-1.5 text-muted-foreground">
+                      Total Repayment
+                      <InfoTip label="total repayment">Everything you pay the bank: all your instalments plus any balloon payment.</InfoTip>
+                    </span>
                     <span className="font-semibold">
                       {formatCurrency(instalmentResult.totalRepayment)}
                     </span>
@@ -210,7 +243,12 @@ export function FinanceCalculator({ initialPrice = "" }: { initialPrice?: string
             </div>
             <div className="flex flex-col gap-5 p-5">
               <div className="flex flex-col gap-1.5">
-                <Label>Gross Monthly Income (R)</Label>
+                <div className="flex items-center gap-1.5">
+                  <Label>Gross Monthly Income (R)</Label>
+                  <InfoTip label="gross monthly income">
+                    What you earn each month before tax and other deductions, as on your payslip. Include any other regular income.
+                  </InfoTip>
+                </div>
                 <Input
                   type="number"
                   placeholder="e.g. 35000"
@@ -219,7 +257,12 @@ export function FinanceCalculator({ initialPrice = "" }: { initialPrice?: string
                 />
               </div>
               <div className="flex flex-col gap-1.5">
-                <Label>Total Monthly Expenses (R)</Label>
+                <div className="flex items-center gap-1.5">
+                  <Label>Total Monthly Expenses (R)</Label>
+                  <InfoTip label="total monthly expenses">
+                    Everything that goes out each month: tax and other payslip deductions, rent or bond, food, utilities, insurance, school fees and the repayments on any debt you already have.
+                  </InfoTip>
+                </div>
                 <Input
                   type="number"
                   placeholder="e.g. 18000"
@@ -227,7 +270,7 @@ export function FinanceCalculator({ initialPrice = "" }: { initialPrice?: string
                   onChange={(e) => setExpenses(e.target.value)}
                 />
                 <p className="text-xs text-muted-foreground">
-                  Include rent, food, utilities, existing debt repayments
+                  Include tax and deductions, rent, food, utilities and debt repayments
                 </p>
               </div>
               <p className="rounded-md bg-muted/50 p-3 text-xs text-muted-foreground">
@@ -249,13 +292,19 @@ export function FinanceCalculator({ initialPrice = "" }: { initialPrice?: string
                 </p>
                 <div className="mt-6 flex flex-col gap-3 border-t pt-6 text-sm">
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">Disposable Income</span>
+                    <span className="flex items-center gap-1.5 text-muted-foreground">
+                      Disposable Income
+                      <InfoTip label="disposable income">Your income minus your expenses: what&apos;s left over each month.</InfoTip>
+                    </span>
                     <span className="font-semibold">
                       {formatCurrency(affordabilityResult.disposableIncome)}
                     </span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">Max Recommended Instalment</span>
+                    <span className="flex items-center gap-1.5 text-muted-foreground">
+                      Max Recommended Instalment
+                      <InfoTip label="max recommended instalment">30% of your disposable income, a common guideline so a car doesn&apos;t stretch your budget.</InfoTip>
+                    </span>
                     <span className="font-semibold">
                       {formatCurrency(affordabilityResult.maxInstalment)}
                     </span>
