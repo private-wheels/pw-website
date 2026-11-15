@@ -53,6 +53,8 @@ import { SiteContainer } from "@/components/site-container";
 import { HelpCallout } from "@/components/help-callout";
 import { ListingPreviewCard } from "@/components/listing-preview-card";
 import { PhotoUploader } from "@/components/photo-uploader";
+import { PhotoRequirements } from "@/components/photo-requirements";
+import { MIN_PHOTOS } from "@/lib/listing-photos";
 
 export interface FormState {
   make: string;
@@ -183,6 +185,7 @@ export function ListingWizard({
   }
 
   const canContinueStep0 = form.make && form.model && form.year && form.price && form.province && form.bodyType;
+  const enoughPhotos = form.images.length >= MIN_PHOTOS;
 
   function handlePhotosChange(update: (images: string[]) => string[]) {
     setForm((f) => {
@@ -247,6 +250,11 @@ export function ListingWizard({
 
   async function handlePublish() {
     if (!user) return;
+    if (!enoughPhotos) {
+      toast.error(`Add at least ${MIN_PHOTOS} photos: the front, back, side and inside of your car.`);
+      setStep(2);
+      return;
+    }
     if (!form.sellerName.trim() || !form.phone.trim()) {
       toast.error("Add your name and contact number so buyers can reach you.");
       setStep(3);
@@ -615,12 +623,15 @@ export function ListingWizard({
         )}
 
         {step === 2 && user && (
+          <div className="flex flex-col gap-5">
+          <PhotoRequirements count={form.images.length} />
           <PhotoUploader
             userId={user.id}
             images={form.images}
             onChange={handlePhotosChange}
             onRemove={handlePhotoRemoved}
           />
+          </div>
         )}
 
         {step === 3 && (
@@ -747,7 +758,7 @@ export function ListingWizard({
           {step < STEPS.length - 1 ? (
             <Button
               onClick={goNext}
-              disabled={step === 0 && !canContinueStep0}
+              disabled={(step === 0 && !canContinueStep0) || (step === 2 && !enoughPhotos)}
               className="rounded-full bg-foreground text-background hover:opacity-90"
             >
               Next

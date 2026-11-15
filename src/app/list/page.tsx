@@ -14,7 +14,7 @@ export const metadata: Metadata = {
 };
 
 const STEPS = [
-  { icon: Camera, title: "Add your car", body: "Details, photos and your asking price. Takes about 10 minutes." },
+  { icon: Camera, title: "Add your car", body: "Details, your asking price and at least 4 photos: the front, back, side and inside. Takes about 10 minutes." },
   { icon: CreditCard, title: "Pay per listing", body: "One fee for each car you list, paid through Paystack. No monthly fees and no commission." },
   { icon: ShieldCheck, title: "We review it", body: "Our team checks every listing so buyers can trust what they see." },
 ];

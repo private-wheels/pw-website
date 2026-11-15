@@ -92,8 +92,8 @@ export function PhotoUploader({
           <Camera className="h-10 w-10 text-muted-foreground" strokeWidth={1.25} />
           <p className="font-semibold">Add photos of your car</p>
           <p className="max-w-sm text-sm text-muted-foreground">
-            Listings with clear photos sell faster. Add up to {MAX_PHOTOS} JPEG, PNG or WebP
-            photos — the first one is your cover photo.
+            Add at least 4 (the front, back, side and inside), up to {MAX_PHOTOS} JPEG, PNG or WebP photos.
+            The first one is your cover photo.
           </p>
         </button>
       ) : (

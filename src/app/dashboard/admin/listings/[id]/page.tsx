@@ -10,6 +10,7 @@ import { PAYMENT_STATUS_STYLES, STATUS_STYLES, statusLabel } from "@/lib/listing
 import type { ListingStatus } from "@/lib/types";
 import { timeAgo } from "@/components/admin/admin-listing-row";
 import { ReviewActions } from "@/components/admin/review-actions";
+import { REQUIRED_PHOTOS } from "@/lib/listing-photos";
 import { VehicleMedia } from "@/components/vehicle-media";
 import { Badge } from "@/components/ui/badge";
 
@@ -132,6 +133,10 @@ export default async function AdminListingPage({ params }: { params: Promise<{ i
         <div className="flex flex-col gap-6">
           <section className="rounded-2xl border bg-card p-5">
             <h3 className="font-semibold">Photos ({row.images.length})</h3>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Required: {REQUIRED_PHOTOS.map((p) => p.label.toLowerCase()).join(", ")}. If any are missing, request
+              changes asking for them, or reject the listing.
+            </p>
             {row.images.length ? (
               <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
                 {row.images.map((src, index) => (
