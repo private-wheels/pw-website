@@ -29,7 +29,7 @@ import {
   ACCIDENT_HISTORY_OPTIONS,
   BODY_TYPES,
   COLOURS,
-  CONDITIONS,
+  SELLER_CONDITIONS,
   FUEL_TYPES,
   MAKES,
   PROVINCES,
@@ -478,7 +478,7 @@ export function ListingWizard({
                   <SelectValue>{(v: string | null) => v || "Select condition"}</SelectValue>
                 </SelectTrigger>
                 <SelectContent>
-                  {CONDITIONS.map((c) => (
+                  {[...SELLER_CONDITIONS, ...(form.condition === "Demo" ? (["Demo"] as const) : [])].map((c) => (
                     <SelectItem key={c} value={c}>
                       {c}
                     </SelectItem>
