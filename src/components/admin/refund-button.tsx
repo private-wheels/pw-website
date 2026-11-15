@@ -40,7 +40,7 @@ export function RefundButton({ paymentId, amount }: { paymentId: string; amount:
           <Input
             value={note}
             onChange={(e) => setNote(e.target.value)}
-            placeholder="Reason, e.g. Charged twice / Seller cancelled before launch"
+            placeholder="Reason, e.g. Charged twice / Cancelled before approval"
           />
           <DialogFooter>
             <Button variant="outline" onClick={() => setOpen(false)} disabled={pending}>

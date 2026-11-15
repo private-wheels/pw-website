@@ -10,7 +10,7 @@ after changing them).
 Vercel deploys `main`, `/list` is reachable on the live site, so it needs these
 before anyone uses it.
 
-- [ ] **Vercel env vars** (see `.env.example` for what each one does):
+- [x] **Vercel env vars** (see `.env.example` for what each one does):
   - `SUPABASE_SECRET_KEY`: Supabase → Project Settings → API Keys (`sb_secret_…`).
     Server-only, never `NEXT_PUBLIC_`.
   - `PAYSTACK_SECRET_KEY`: the **test** key (`sk_test_…`) until step 3.
@@ -20,10 +20,10 @@ before anyone uses it.
     hello@private-wheels.co.za).
   - Leave `FOUNDING_PRICE` **unset** in production, so sellers pay R125 until
     launch and R249 after.
-- [ ] **Paystack webhook (test mode):** Paystack → Settings → API Keys &
+- [x] **Paystack webhook (test mode):** Paystack → Settings → API Keys &
       Webhooks → Test Webhook URL
       `https://www.private-wheels.co.za/api/paystack/webhook`
-- [ ] **Turnstile (bot check), in this order:**
+- [x] **Turnstile (bot check), in this order:**
   1. Cloudflare → Turnstile → Add widget. Hostnames: `private-wheels.co.za`,
      `www.private-wheels.co.za`, `localhost`. Mode: Managed.
   2. Put the **site key** in Vercel as `NEXT_PUBLIC_TURNSTILE_SITE_KEY` (and in
@@ -52,12 +52,12 @@ Already done:
 
 ### Emails (password reset, enquiries, reminders)
 
-- [ ] **Migration:** `supabase/migrations/20261116090000_listing_email_tracking.sql`
+- [x] **Migration:** `supabase/migrations/20261116090000_listing_email_tracking.sql`
       (reminder and launch-day email tracking).
-- [ ] **Vercel (Production and Preview):** `TURNSTILE_SECRET_KEY` = the Turnstile
+- [x] **Vercel (Production and Preview):** `TURNSTILE_SECRET_KEY` = the Turnstile
       widget's secret key (the one in Supabase's CAPTCHA settings), and
       `CRON_SECRET` = any long random string. Redeploy.
-- [ ] **Supabase → Authentication → Emails → Reset Password** template, so reset
+- [x] **Supabase → Authentication → Emails → Reset Password** template, so reset
       links work on any device. Link:
       `{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=recovery&next=%2Flogin%2Freset-password`
 - [ ] **Supabase → Authentication → URL Configuration → Redirect URLs:** includes
@@ -67,14 +67,14 @@ Already done:
 
 Paystack test card: `4084 0840 8408 4081`, any future expiry, CVV `408`.
 
-- [ ] **`/list` as a new seller:** in a private window, go to
+- [x] **`/list` as a new seller:** in a private window, go to
       `/list` → Start your listing → add a car with photos → I'm new here (an
       email you can check) → pay **R125** → "You're all set!"
   - [ ] Received "We've received your listing" and the confirm-email link
   - [ ] The link opens `/list/password`, and the password works on `/login`
-- [ ] **`/list` with an existing account:** choose "I have an account" and sign
+- [x] **`/list` with an existing account:** choose "I have an account" and sign
       in. The listing (and photos) show up on that account's dashboard.
-- [ ] **Admin review** (signed in as an admin → Dashboard → Admin):
+- [x] **Admin review** (signed in as an admin → Dashboard → Admin):
   - [ ] Approve one: the seller gets the "approved" email
   - [ ] Request changes on one: the seller sees the note, edits, presses
         **Save & Resubmit**, and it's back in the queue
@@ -82,31 +82,37 @@ Paystack test card: `4084 0840 8408 4081`, any future expiry, CVV `408`.
         *refunded* once Paystack confirms
 - [ ] **Admin listing:** create a listing as an admin. It publishes without
       payment.
-- [ ] **Gate:** signed out, `/`, `/cars` and `/finance` show the coming-soon
+- [x] **Gate:** signed out, `/`, `/cars` and `/finance` show the coming-soon
       page; `/list`, `/login`, `/register` and `/legal/*` open.
 
 ## 3. Go live with payments
 
-- [ ] Vercel: switch `PAYSTACK_SECRET_KEY` to the **live** key (`sk_live_…`).
+- [x] Vercel: switch `PAYSTACK_SECRET_KEY` to the **live** key (`sk_live_…`).
       Keep `sk_test_…` in `.env.local`.
-- [ ] Paystack → Live Webhook URL:
+- [x] Paystack → Live Webhook URL:
       `https://www.private-wheels.co.za/api/paystack/webhook`
-- [ ] One real R125 payment through `/list`, then refund it from
+- [x] One real R125 payment through `/list`, then refund it from
       Admin → Payments. Check it reaches the card.
 
 ## 4. Legal and compliance
 
-- [ ] Set the policies' effective date: `LEGAL_LAST_UPDATED` /
+- [x] Set the policies' effective date: `LEGAL_LAST_UPDATED` /
       `[EFFECTIVE DATE]` in `src/lib/legal.ts`.
-- [ ] Attorney review of `/legal/privacy`, `/legal/terms` and `/legal/refunds`.
-- [ ] Register the Information Officer (Wilhelm Stoltz) with the Information
-      Regulator (inforegulator.org.za).
-- [ ] Confirm whether a PAIA manual is required, or the small private body
-      exemption applies.
+- [ ] Attorney review of `/legal/privacy`, `/legal/terms`, `/legal/refunds` and `/legal/paia`
+      (skipped for now; worth doing before launch day).
+- [x] Register the Information Officer (Wilhelm Stoltz) with the Information
+      Regulator (eservices.inforegulator.org.za). Done 15 Nov 2026 (PRIVATEWHEELS,
+      CIPC-verified; Wilhelm as Information Officer, Managing Director).
+      Registration number 2026-072230; certificate in `docs/compliance/`.
+- [ ] **PAIA annual report:** every year on the eServices portal, 1 April to 30 June
+      (first one due 1 Apr to 30 Jun 2027, for the year to 31 March 2027).
+- [x] **PAIA manual:** required for all private bodies since the small-business exemption
+      lapsed on 31 Dec 2021. Published at `/legal/paia` (linked with the other policies),
+      and uploaded to the Regulator's eServices portal (English) on 15 Nov 2026.
 
 ## 5. Before inviting sellers (recommended)
 
-- [ ] **Forgot password.** "Forgot password?" on `/login` is plain text with no
+- [x] **Forgot password.** "Forgot password?" on `/login` is plain text with no
       reset flow. Without one, anyone who forgets their password, or a `/list`
       seller who lost the confirm-email link, can't get back in.
 
@@ -125,7 +131,7 @@ Paystack test card: `4084 0840 8408 4081`, any future expiry, CVV `408`.
 
 ## Later
 
-- [ ] **Smile ID to production.** Testing runs on the sandbox key. Before
+- [x] **Smile ID to production.** Testing runs on the sandbox key. Before
       launch: Vercel `SMILE_ID_API_KEY` = production key, `SMILE_ID_ENV=production`,
       and add `https://www.private-wheels.co.za/api/smileid/webhook` under
       Production callback URLs in the Smile ID portal. Then one real check with

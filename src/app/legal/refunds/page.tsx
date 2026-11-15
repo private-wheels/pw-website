@@ -14,10 +14,10 @@ export default function RefundPolicyPage() {
       title="Refund Policy"
       summary={
         <p>
-          If your listing doesn&apos;t go live, you get your money back. Rejected listings
+          Until your listing is approved, you can get your money back: rejected listings
           are refunded automatically, and you can cancel for a full refund any time before
-          your listing is approved. Once your listing is live, the fee isn&apos;t
-          refundable, because we&apos;ve delivered the service.
+          approval. Once your listing is approved, the fee isn&apos;t refundable, because
+          we&apos;ve delivered the service. This applies to founding sellers too.
         </p>
       }
     >
@@ -43,11 +43,6 @@ export default function RefundPolicyPage() {
             changes.
           </li>
           <li>
-            <strong>Founding sellers:</strong> if you paid the founding price before launch,
-            you can cancel any time before launch day for a full refund, even if your
-            listing has already been approved.
-          </li>
-          <li>
             <strong>Duplicate or wrong charges:</strong> if you&apos;re charged twice, or
             charged the wrong amount, we&apos;ll always refund the extra.
           </li>
@@ -64,10 +59,15 @@ export default function RefundPolicyPage() {
 
       <LegalSection id="no-refund" title="4. When there's no refund">
         <p>
-          Once your listing is approved and live on the marketplace, the fee isn&apos;t
-          refundable. The service you paid for (reviewing and publishing your listing) has
-          been delivered. This applies even if your car sells quickly, you sell it
-          elsewhere, or you remove the listing yourself.
+          Once your listing is approved, the fee isn&apos;t refundable. The service you paid
+          for (reviewing and publishing your listing) has been delivered. This applies even
+          if your car sells quickly, you sell it elsewhere, or you remove the listing
+          yourself.
+        </p>
+        <p>
+          <strong>Founding sellers:</strong> the same applies before launch. Once your
+          listing is approved and waiting for launch day, the fee isn&apos;t refundable,
+          even if you change your mind before we launch.
         </p>
         <p>
           The same applies if we remove a live listing because it broke our{" "}

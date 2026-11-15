@@ -3,7 +3,6 @@ import { ArrowLeft, ExternalLink } from "lucide-react";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getAdmin } from "@/lib/server/admin";
 import { isListingId, rowToVehicle } from "@/lib/listings";
-import { isPreLaunch } from "@/lib/email-templates";
 import { refundAdvice } from "@/lib/refund-policy";
 import { formatCurrency, formatMileage } from "@/lib/format";
 import { PAYMENT_STATUS_STYLES, STATUS_STYLES, statusLabel } from "@/lib/listing-status";
@@ -58,7 +57,6 @@ export default async function AdminListingPage({ params }: { params: Promise<{ i
     hasPayment: (payments ?? []).some((p) => p.status === "success"),
     feeWaived: row.fee_waived,
     wasApproved: Boolean(row.approved_at),
-    preLaunch: isPreLaunch(),
   });
 
   const facts: [string, string][] = [

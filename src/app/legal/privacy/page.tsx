@@ -497,7 +497,8 @@ export default function PrivacyPolicyPage() {
           <li>
             <strong>Access:</strong> ask whether we hold personal information about you and
             for a copy of it (section 23). We may charge a small fee allowed under the
-            Promotion of Access to Information Act, and we&apos;ll tell you upfront.
+            Promotion of Access to Information Act, and we&apos;ll tell you upfront. Our{" "}
+            <Link href="/legal/paia">PAIA Manual</Link> explains how to request other records.
           </li>
           <li>
             <strong>Correction and deletion:</strong> ask us to correct, update or delete

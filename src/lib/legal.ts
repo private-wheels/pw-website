@@ -2,24 +2,26 @@
  * Business details and shared constants for the legal pages
  * (`/legal/privacy`, `/legal/terms`, `/legal/refunds`).
  *
- * Anything in [SQUARE BRACKETS] is a placeholder that must be filled in, and
- * the drafts reviewed by an attorney, before launch.
+ * The policies still need an attorney's review. Keep these details current;
+ * every policy page reads them from here.
  */
 
 /** Shown at the top of every policy. Bump it whenever any policy changes. */
-export const LEGAL_LAST_UPDATED = "[EFFECTIVE DATE]";
+export const LEGAL_LAST_UPDATED = "15 November 2026";
 
 export const BUSINESS = {
   legalName: "PRIVATEWHEELS (PTY) LTD",
   tradingName: "Private Wheels",
   registrationNumber: "2025/889931/07",
-  vatNumber: "[VAT NUMBER, IF REGISTERED]",
+  /** Shown in the Terms only once set (not VAT registered yet). */
+  vatNumber: null as string | null,
   directors: "Wilhelm Johannes Stoltz",
   address: "18 Peter Rd, Ruimsig, Roodepoort, 1724, Gauteng, South Africa",
   email: "hello@private-wheels.co.za",
   phone: "+27 82 813 9950",
   website: "https://www.private-wheels.co.za",
-  informationOfficer: "Wilhelm Stoltz (Director)",
+  /** Registered with the Information Regulator on 15 November 2026. */
+  informationOfficer: "Wilhelm Stoltz (Managing Director)",
   informationOfficerEmail: "hello@private-wheels.co.za",
 } as const;
 
@@ -41,4 +43,5 @@ export const LEGAL_LINKS = [
   { label: "Privacy Policy", href: "/legal/privacy" },
   { label: "Terms of Use", href: "/legal/terms" },
   { label: "Refund Policy", href: "/legal/refunds" },
+  { label: "PAIA Manual", href: "/legal/paia" },
 ] as const;
