@@ -317,3 +317,158 @@ export function adminIdentityReviewEmail(d: { email: string }): Email {
     }),
   };
 }
+
+// ---------------------------------------------------------------------------
+// Refunds, launch day, reminders and accounts
+// ---------------------------------------------------------------------------
+
+/** A refund made on its own (not while declining a listing), e.g. a double charge. */
+export function refundIssuedEmail(d: { sellerName: string; amount: string; listingTitle: string | null }): Email {
+  const what = d.listingTitle ? `the listing fee for your ${d.listingTitle}` : "your listing fee";
+  return {
+    subject: `We've refunded your ${d.amount} listing fee`,
+    ...render({
+      preheader: "It usually shows on your statement within 5 to 10 working days.",
+      heading: "Your refund is on its way",
+      greeting: hello(d.sellerName),
+      blocks: [
+        { p: `We've refunded ${what}: ${d.amount}, in full.` },
+        {
+          p: "It goes back to the card or account you paid with, and usually shows on your statement within 5 to 10 working days, depending on your bank.",
+        },
+        { p: "If it hasn't arrived after 10 working days, reply to this email and we'll look into it." },
+      ],
+    }),
+  };
+}
+
+/** Launch day: a listing approved before launch is now public. */
+export function listingLiveEmail(d: ListingEmailData): Email {
+  return {
+    subject: `We're live! Your ${d.listingTitle} is on Private Wheels`,
+    ...render({
+      preheader: "Private Wheels has launched and buyers can now find your car.",
+      heading: "We've launched, and your car is live",
+      greeting: hello(d.sellerName),
+      blocks: [
+        {
+          p: `Private Wheels is officially open, and as a founding seller your ${d.listingTitle} is one of the first cars buyers see.`,
+        },
+        { button: "View your listing", href: `${siteUrl()}/cars/${d.listingId}` },
+        {
+          p: "Buyers will contact you directly. You can pause your listing or mark it as sold from your dashboard at any time. Thank you for being with us from the start.",
+        },
+      ],
+    }),
+  };
+}
+
+/** A day or two after a seller stopped: their draft or unpaid listing is saved. */
+export function listingReminderEmail(d: ListingEmailData & { stage: "draft" | "unpaid" }): Email {
+  const draft = d.stage === "draft";
+  return {
+    subject: draft ? `Your ${d.listingTitle} draft is saved` : `Your ${d.listingTitle} is almost ready`,
+    ...render({
+      preheader: draft
+        ? "Pick up where you left off whenever you're ready."
+        : "Pay the listing fee to send it for review.",
+      heading: draft ? "Your draft is waiting for you" : "One step left",
+      greeting: hello(d.sellerName),
+      blocks: draft
+        ? [
+            {
+              p: `You started listing your ${d.listingTitle} and saved it as a draft. Everything you added is still there, so you can finish it in a few minutes.`,
+            },
+            { button: "Finish your listing", href: `${siteUrl()}/dashboard/listings/${d.listingId}/edit` },
+          ]
+        : [
+            {
+              p: `Your ${d.listingTitle} is saved and ready. Pay the listing fee and our team will review it, usually within one working day.`,
+            },
+            { button: "Go to your dashboard", href: `${siteUrl()}/dashboard` },
+          ],
+    }),
+  };
+}
+
+/** After a seller deletes their account. */
+export function accountDeletedEmail(d: { name: string }): Email {
+  return {
+    subject: "Your Private Wheels account has been deleted",
+    ...render({
+      preheader: "Your account, listings and photos have been removed.",
+      heading: "Your account has been deleted",
+      greeting: hello(d.name),
+      blocks: [
+        {
+          p: "As you asked, we've deleted your Private Wheels account, along with your listings and their photos.",
+        },
+        {
+          p: "We keep a record of any payments for tax purposes, and of identity checks, without your name or contact details. Our privacy policy has the details.",
+        },
+        {
+          p: "If you didn't ask for this, reply to this email straight away. You're always welcome to create a new account.",
+        },
+      ],
+    }),
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Buyer enquiries from a listing page
+// ---------------------------------------------------------------------------
+
+type EnquiryData = {
+  listingTitle: string;
+  listingId: string;
+  sellerName: string;
+  buyerName: string;
+  buyerEmail: string;
+  buyerPhone: string;
+  message: string;
+};
+
+/** To the seller. Replying goes straight to the buyer (reply-to). */
+export function enquiryToSellerEmail(d: EnquiryData): Email {
+  return {
+    subject: `New enquiry about your ${d.listingTitle}`,
+    ...render({
+      preheader: `${d.buyerName} sent you a message through Private Wheels.`,
+      heading: "You have a new enquiry",
+      greeting: hello(d.sellerName),
+      blocks: [
+        { p: `${d.buyerName} is interested in your ${d.listingTitle}.` },
+        { label: "Their message", note: d.message },
+        {
+          label: "Their details",
+          note: [d.buyerName, d.buyerEmail, d.buyerPhone].filter(Boolean).join("\n"),
+        },
+        { p: "Reply to this email to answer them directly. Never pay or share banking details before you've met." },
+        { button: "View your listing", href: `${siteUrl()}/cars/${d.listingId}` },
+      ],
+    }),
+  };
+}
+
+/** To the buyer: a copy of what they sent. */
+export function enquiryCopyEmail(d: EnquiryData): Email {
+  const seller = d.sellerName.trim().split(/\s+/)[0] || "The seller";
+  return {
+    subject: `Your enquiry about the ${d.listingTitle}`,
+    ...render({
+      preheader: `We've sent your message to ${seller}.`,
+      heading: "Your enquiry has been sent",
+      greeting: hello(d.buyerName),
+      blocks: [
+        {
+          p: `We've passed your message about the ${d.listingTitle} to ${seller}, who will reply to you directly at this email address.`,
+        },
+        { label: "Your message", note: d.message },
+        {
+          p: "Stay safe: view the car in person before paying anything, and never pay a deposit to hold a car you haven't seen.",
+        },
+        { button: "View the listing", href: `${siteUrl()}/cars/${d.listingId}` },
+      ],
+    }),
+  };
+}

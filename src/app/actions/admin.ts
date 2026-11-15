@@ -5,7 +5,8 @@ import { isListingId } from "@/lib/listings";
 import { refundPayment } from "@/lib/paystack";
 import { decideReview } from "@/lib/smileid";
 import { getAdmin } from "@/lib/server/admin";
-import { notifyListing } from "@/lib/server/listing-emails";
+import { notifyListing, notifyRefund } from "@/lib/server/listing-emails";
+import { isPreLaunch } from "@/lib/site";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { LISTINGS_TAG } from "@/lib/supabase/server";
 
@@ -18,6 +19,9 @@ import { LISTINGS_TAG } from "@/lib/supabase/server";
 type Result = { ok: true; warning?: string } | { ok: false; error: string };
 
 const NOT_ADMIN: Result = { ok: false, error: "Only admins can do that." };
+
+/** Shown to the admin when the seller's email didn't go out, so it's never silent. */
+const EMAIL_FAILED = "The seller's email couldn't be sent, so let them know yourself. (Check the Resend key in Vercel.)";
 
 function cleanNote(note: string): string {
   return note.trim().slice(0, 2000);
@@ -50,13 +54,15 @@ export async function approveListing(id: string): Promise<Result> {
       approved_at: listing.approved_at ?? new Date().toISOString(),
       reviewed_by: admin.id,
       review_note: "",
+      // Approved before launch: owed a "we're live" email on launch day.
+      launch_email_pending: isPreLaunch(),
     })
     .eq("id", id);
   if (error) return { ok: false, error: error.message };
 
   updateTag(LISTINGS_TAG);
-  await notifyListing(id, { type: "approved" });
-  return { ok: true };
+  const emailed = await notifyListing(id, { type: "approved" });
+  return emailed ? { ok: true } : { ok: true, warning: `Approved. ${EMAIL_FAILED}` };
 }
 
 /** Send it back to the seller with a note; they fix it and resubmit for free. */
@@ -78,8 +84,8 @@ export async function requestChanges(id: string, note: string): Promise<Result> 
   if (error) return { ok: false, error: error.message };
 
   updateTag(LISTINGS_TAG);
-  await notifyListing(id, { type: "changes_requested", note: text });
-  return { ok: true };
+  const emailed = await notifyListing(id, { type: "changes_requested", note: text });
+  return emailed ? { ok: true } : { ok: true, warning: `Sent back for changes. ${EMAIL_FAILED}` };
 }
 
 /**
@@ -130,7 +136,8 @@ export async function rejectListing(id: string, note: string, refund: boolean): 
     }
   }
 
-  await notifyListing(id, { type: "rejected", note: text, refund: refunded, amount: refundedAmount });
+  const emailed = await notifyListing(id, { type: "rejected", note: text, refund: refunded, amount: refundedAmount });
+  if (!emailed) warning = [warning, EMAIL_FAILED].filter(Boolean).join(" ");
   return warning ? { ok: true, warning } : { ok: true };
 }
 
@@ -142,10 +149,44 @@ export async function refundPaymentAction(paymentId: string, note: string): Prom
   if (!text) return { ok: false, error: "Add a short reason for the refund." };
   try {
     await refundPayment(paymentId, text);
-    return { ok: true };
   } catch (err) {
     return { ok: false, error: err instanceof Error ? err.message : "Refund failed." };
   }
+  const emailed = await notifyRefund(paymentId);
+  return emailed ? { ok: true } : { ok: true, warning: `Refunded. ${EMAIL_FAILED}` };
+}
+
+/**
+ * Launch day: email every seller whose listing was approved before launch
+ * that it's now live. Each listing is emailed once; run it again to retry
+ * any that failed.
+ */
+export async function sendLaunchEmails(): Promise<
+  { ok: true; sent: number; failed: number } | { ok: false; error: string }
+> {
+  const admin = await getAdmin();
+  if (!admin) return { ok: false, error: "Only admins can do that." };
+  if (isPreLaunch()) return { ok: false, error: "The site hasn't launched yet (SITE_LAUNCHED isn't on)." };
+
+  const db = createAdminClient();
+  const { data: listings, error } = await db
+    .from("listings")
+    .select("id")
+    .eq("launch_email_pending", true)
+    .eq("status", "active");
+  if (error) return { ok: false, error: error.message };
+
+  let sent = 0;
+  let failed = 0;
+  for (const { id } of listings) {
+    if (await notifyListing(id, { type: "live" })) {
+      await db.from("listings").update({ launch_email_pending: false }).eq("id", id);
+      sent++;
+    } else {
+      failed++;
+    }
+  }
+  return { ok: true, sent, failed };
 }
 
 /**

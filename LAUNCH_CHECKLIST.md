@@ -50,6 +50,19 @@ Already done:
 - [x] Anonymous sign-ins switched on (needed for `/list`)
 - [x] `private-wheels.co.za` verified in Resend
 
+### Emails (password reset, enquiries, reminders)
+
+- [ ] **Migration:** `supabase/migrations/20261116090000_listing_email_tracking.sql`
+      (reminder and launch-day email tracking).
+- [ ] **Vercel (Production and Preview):** `TURNSTILE_SECRET_KEY` = the Turnstile
+      widget's secret key (the one in Supabase's CAPTCHA settings), and
+      `CRON_SECRET` = any long random string. Redeploy.
+- [ ] **Supabase → Authentication → Emails → Reset Password** template, so reset
+      links work on any device. Link:
+      `{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=recovery&next=%2Flogin%2Freset-password`
+- [ ] **Supabase → Authentication → URL Configuration → Redirect URLs:** includes
+      `https://www.private-wheels.co.za/**`.
+
 ## 2. Test on the live site (test card)
 
 Paystack test card: `4084 0840 8408 4081`, any future expiry, CVV `408`.
@@ -107,7 +120,8 @@ Paystack test card: `4084 0840 8408 4081`, any future expiry, CVV `408`.
       `FOUNDING_PRICE=on`).
 - [ ] **Check the public site:** home page, `/cars`, a listing page, and
       Sell your car → listing → pay **R249** → review.
-- [ ] Tell the founding sellers they're live.
+- [ ] Tell the founding sellers they're live: Admin → overview → **Send launch emails**
+      (shows up once `SITE_LAUNCHED=true`).
 
 ## Later
 

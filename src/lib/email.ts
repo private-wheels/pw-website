@@ -15,7 +15,11 @@ export const SUPPORT_EMAIL = "hello@private-wheels.co.za";
 
 export type Email = { subject: string; html: string; text: string };
 
-export async function sendEmail(to: string | string[], email: Email): Promise<boolean> {
+export async function sendEmail(
+  to: string | string[],
+  email: Email,
+  options: { replyTo?: string } = {},
+): Promise<boolean> {
   const apiKey = process.env.RESEND_API_KEY;
   if (!apiKey) {
     console.warn(`[email] RESEND_API_KEY not set — skipped "${email.subject}"`);
@@ -29,7 +33,7 @@ export async function sendEmail(to: string | string[], email: Email): Promise<bo
       body: JSON.stringify({
         from: process.env.LISTING_EMAIL_FROM ?? `Private Wheels <${SUPPORT_EMAIL}>`,
         to: Array.isArray(to) ? to : [to],
-        reply_to: SUPPORT_EMAIL,
+        reply_to: options.replyTo ?? SUPPORT_EMAIL,
         subject: email.subject,
         html: email.html,
         text: email.text,

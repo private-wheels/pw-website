@@ -30,6 +30,7 @@ import { formatCurrency, formatDateShort, formatMileage } from "@/lib/format";
 import { getPriceRating, type PriceRating } from "@/lib/filter";
 import { FinanceCalculator } from "@/components/finance-calculator";
 import { FinancePartner } from "@/components/finance-partner";
+import { EnquiryForm } from "@/components/enquiry-form";
 import { photoViewLabel } from "@/lib/listing-photos";
 import { VehiclePlaceholder } from "@/components/vehicle-placeholder";
 import { VehicleMedia } from "@/components/vehicle-media";
@@ -38,9 +39,6 @@ import { SiteContainer } from "@/components/site-container";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import {
   Dialog,
   DialogClose,
@@ -131,11 +129,6 @@ export function VehicleDetailClient({ id }: { id: string }) {
     listing.images.length > 0
       ? listing.images.map((_, i) => i)
       : Array.from({ length: 5 }, (_, i) => i);
-
-  function handleEnquirySubmit(e: React.FormEvent) {
-    e.preventDefault();
-    setEnquirySent(true);
-  }
 
   function scrollThumbs(amount: number) {
     thumbRailRef.current?.scrollBy({ left: amount, behavior: "smooth" });
@@ -417,8 +410,8 @@ export function VehicleDetailClient({ id }: { id: string }) {
                           <DialogHeader>
                             <DialogTitle>Thanks — your enquiry is on its way</DialogTitle>
                             <DialogDescription>
-                              {listing.sellerName.split(" ")[0]} will be in touch about the{" "}
-                              {listing.year} {listing.make} {listing.model} soon.
+                              We&apos;ve emailed your message to {listing.sellerName.split(" ")[0]}, who&apos;ll reply
+                              to you directly. Check your inbox for a copy.
                             </DialogDescription>
                           </DialogHeader>
                           <DialogClose
@@ -440,42 +433,7 @@ export function VehicleDetailClient({ id }: { id: string }) {
                               vehicle.
                             </DialogDescription>
                           </DialogHeader>
-                          <form onSubmit={handleEnquirySubmit} className="flex flex-col gap-4">
-                            <div className="flex flex-col gap-1.5">
-                              <Label htmlFor="enquiry-name">Your Name</Label>
-                              <Input
-                                id="enquiry-name"
-                                required
-                                placeholder="Jane Doe"
-                                className="h-11 focus-visible:border-ring focus-visible:ring-0"
-                              />
-                            </div>
-                            <div className="flex flex-col gap-1.5">
-                              <Label htmlFor="enquiry-email">Email</Label>
-                              <Input
-                                id="enquiry-email"
-                                type="email"
-                                required
-                                placeholder="you@example.com"
-                                className="h-11 focus-visible:border-ring focus-visible:ring-0"
-                              />
-                            </div>
-                            <div className="flex flex-col gap-1.5">
-                              <Label htmlFor="enquiry-message">Message</Label>
-                              <Textarea
-                                id="enquiry-message"
-                                required
-                                defaultValue={`Hi, is the ${listing.year} ${listing.make} ${listing.model} still available?`}
-                                className="focus-visible:border-ring focus-visible:ring-0"
-                              />
-                            </div>
-                            <Button
-                              type="submit"
-                              className="h-12 w-full rounded-full bg-primary hover:bg-primary/90"
-                            >
-                              Send Enquiry
-                            </Button>
-                          </form>
+                          <EnquiryForm listing={listing} onSent={() => setEnquirySent(true)} />
                         </>
                       )}
                     </DialogContent>
