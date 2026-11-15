@@ -193,12 +193,12 @@ function AccountStep() {
           </>
         )}
         {savingDraft ? null : user.isAnonymous
-          ? "Add your email so we can tell you when it's approved. Then you'll verify your identity and pay the once-off listing fee."
+          ? "Add your email so we can tell you when it's approved. Then you'll verify your identity and pay the listing fee for this car."
           : user.role === "admin"
             ? "As an admin, you can publish it straight away."
             : user.identityStatus === "verified"
-              ? "Pay the once-off listing fee and we'll review it."
-              : "Verify your identity, then pay the once-off listing fee and we'll review it."}
+              ? "Pay the listing fee for this car and we'll review it."
+              : "Verify your identity, then pay the listing fee for this car and we'll review it."}
       </p>
 
       <div className="mt-6 rounded-2xl border bg-card p-5">
@@ -326,7 +326,7 @@ function AccountStep() {
 
       {fee.founding && user.role !== "admin" && !savingDraft && (
         <p className="mt-3 text-center text-xs text-muted-foreground">
-          {fee.label} is the founding-seller price. Listings cost {formatFee(LISTING_FEE_CENTS)} once we launch.
+          {fee.label} per listing is the founding-seller price. Each listing costs {formatFee(LISTING_FEE_CENTS)} once we launch.
         </p>
       )}
 

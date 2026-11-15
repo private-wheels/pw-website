@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { BadgeCheck, CalendarClock, Camera, CreditCard, ShieldCheck } from "lucide-react";
+import { CalendarClock, Camera, CreditCard, ShieldCheck } from "lucide-react";
 import { FOUNDING_FEE_CENTS, LISTING_FEE_CENTS, formatFee } from "@/lib/payments";
 import { isFoundingPriceActive, isPreLaunch } from "@/lib/site";
 import { HelpCallout } from "@/components/help-callout";
@@ -15,7 +15,7 @@ export const metadata: Metadata = {
 
 const STEPS = [
   { icon: Camera, title: "Add your car", body: "Details, photos and your asking price. Takes about 10 minutes." },
-  { icon: CreditCard, title: "Pay once", body: "A once-off listing fee through Paystack. No commission, ever." },
+  { icon: CreditCard, title: "Pay per listing", body: "One fee for each car you list, paid through Paystack. No monthly fees and no commission." },
   { icon: ShieldCheck, title: "We review it", body: "Our team checks every listing so buyers can trust what they see." },
 ];
 
@@ -34,7 +34,7 @@ export default function ListYourCarPage() {
         {founding && (
           <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
             <CalendarClock className="h-3.5 w-3.5" />
-            Founding-seller price: {price} until launch
+            Founding-seller price: {price} per listing until launch
           </span>
         )}
         <h1 className="mt-4 text-4xl font-semibold tracking-tight text-balance sm:text-5xl">
@@ -55,12 +55,12 @@ export default function ListYourCarPage() {
           <p className="text-sm text-muted-foreground">
             {founding ? (
               <>
-                <span className="font-semibold text-foreground">{price} now</span> as a founding seller ·{" "}
-                {formatFee(LISTING_FEE_CENTS)} once we launch · No account needed to start
+                <span className="font-semibold text-foreground">{price} per listing</span> as a founding seller ·{" "}
+                {formatFee(LISTING_FEE_CENTS)} per listing once we launch · No account needed to start
               </>
             ) : (
               <>
-                <span className="font-semibold text-foreground">{price}</span> once-off · No account needed to start
+                <span className="font-semibold text-foreground">{price} per listing</span> · No account needed to start
               </>
             )}
           </p>
@@ -80,17 +80,6 @@ export default function ListYourCarPage() {
       </div>
 
       <div className="mx-auto mt-10 flex max-w-2xl flex-col gap-3 rounded-2xl border bg-muted/40 p-5 text-sm">
-        <p className="flex items-start gap-2">
-          <BadgeCheck className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
-          <span>
-            {preLaunch
-              ? "Changed your mind before launch? Cancel any time before launch day for a full refund."
-              : "If we can't approve your listing, you get a full refund."}{" "}
-            <Link href="/legal/refunds" className="underline underline-offset-2">
-              Refund policy
-            </Link>
-          </span>
-        </p>
         <HelpCallout />
       </div>
     </SiteContainer>
