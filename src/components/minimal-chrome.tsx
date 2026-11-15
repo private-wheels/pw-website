@@ -8,14 +8,24 @@ import { SUPPORT_EMAIL } from "@/lib/email";
  * navigation (the /list funnel and the policy pages — see SiteChrome), so
  * nobody wanders into the still-gated marketplace.
  */
-export function MinimalChrome({ homeHref, children }: { homeHref: string; children: ReactNode }) {
+export function MinimalChrome({
+  homeHref,
+  actions,
+  children,
+}: {
+  homeHref: string;
+  /** Shown on the right of the header (e.g. a sign-in link). */
+  actions?: ReactNode;
+  children: ReactNode;
+}) {
   return (
     <div className="flex min-h-screen flex-col">
       <header className="border-b">
-        <div className="mx-auto flex h-16 max-w-6xl items-center px-4 sm:px-6 lg:px-8">
+        <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
           <Link href={homeHref} aria-label="Private Wheels">
             <BrandLogo className="h-7 w-auto text-primary" />
           </Link>
+          {actions}
         </div>
       </header>
       <div className="flex-1">{children}</div>
