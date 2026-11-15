@@ -145,6 +145,80 @@ function initialForm(existing: Vehicle | undefined, user: User | null): FormStat
 
 const STEPS = ["Vehicle Details", "Specs & Features", "Photos", "Description & Price", "Review"];
 
+/**
+ * Everything on a listing is required except the optional extra photos.
+ * Each check returns the problem to show, or null when the field is fine.
+ */
+type Check = { field: keyof FormState; label: string; problem: (f: FormState) => string | null };
+
+const blank = (value: string) => value.trim() === "";
+const wholeNumberIn = (value: string, min: number, max: number) => {
+  const n = Number(value);
+  return !blank(value) && Number.isInteger(n) && n >= min && n <= max;
+};
+const required = (field: keyof FormState, label: string): Check => ({
+  field,
+  label,
+  problem: (f) => (blank(String(f[field] ?? "")) ? label : null),
+});
+
+const STEP_CHECKS: Check[][] = [
+  [
+    required("make", "Make"),
+    required("model", "Model"),
+    required("variant", "Variant"),
+    {
+      field: "year",
+      label: "Year",
+      problem: (f) => (wholeNumberIn(f.year, 1900, new Date().getFullYear() + 1) ? null : "Year"),
+    },
+    { field: "price", label: "Price", problem: (f) => (wholeNumberIn(f.price, 1, 100_000_000) ? null : "Price") },
+    { field: "mileage", label: "Mileage", problem: (f) => (wholeNumberIn(f.mileage, 0, 5_000_000) ? null : "Mileage") },
+    required("bodyType", "Body type"),
+    required("condition", "Condition"),
+    required("transmission", "Transmission"),
+    required("fuelType", "Fuel type"),
+    required("province", "Province"),
+    required("town", "Town / suburb"),
+  ],
+  [
+    {
+      field: "previousOwners",
+      label: "Previous owners",
+      problem: (f) => (wholeNumberIn(f.previousOwners, 0, 50) ? null : "Previous owners"),
+    },
+    required("colour", "Colour"),
+    required("serviceHistory", "Service history"),
+    required("accidentHistory", "Accident history"),
+    { field: "features", label: "Features", problem: (f) => (f.features.length > 0 ? null : "At least one feature") },
+  ],
+  [
+    {
+      field: "photos",
+      label: "Photos",
+      problem: (f) => {
+        const missing = missingViews(f.photos.map((p) => p.view));
+        return missing.length > 0 ? `Photos of ${listViews(missing)}` : null;
+      },
+    },
+  ],
+  [
+    required("description", "Description"),
+    required("sellerName", "Your name"),
+    {
+      field: "phone",
+      label: "Contact number",
+      problem: (f) => (f.phone.replace(/\D/g, "").length >= 9 ? null : "Contact number"),
+    },
+  ],
+  [],
+];
+
+/** The problems on one step, as short labels ("Year", "Photos of the back"). */
+function stepProblems(form: FormState, step: number): string[] {
+  return (STEP_CHECKS[step] ?? []).map((c) => c.problem(form)).filter((p): p is string => p !== null);
+}
+
 export function ListingWizard({
   mode,
   existingListing,
@@ -187,9 +261,15 @@ export function ListingWizard({
     }));
   }
 
-  const canContinueStep0 = form.make && form.model && form.year && form.price && form.province && form.bodyType;
-  const missingPhotoViews = missingViews(form.photos.map((p) => p.view));
-  const enoughPhotos = missingPhotoViews.length === 0;
+  // Steps where the seller tried to move on with gaps: their problems show.
+  const [checkedSteps, setCheckedSteps] = useState<number[]>([]);
+  const currentProblems = checkedSteps.includes(step) ? stepProblems(form, step) : [];
+  /** Whether to mark a field as missing (only once they've tried to move on). */
+  function invalid(field: keyof FormState): boolean {
+    const stepIndex = STEP_CHECKS.findIndex((checks) => checks.some((c) => c.field === field));
+    if (!checkedSteps.includes(stepIndex)) return false;
+    return STEP_CHECKS[stepIndex].some((c) => c.field === field && c.problem(form) !== null);
+  }
 
   function handlePhotosChange(update: (photos: ListingPhoto[]) => ListingPhoto[]) {
     setForm((f) => {
@@ -211,6 +291,10 @@ export function ListingWizard({
   }
 
   function goNext() {
+    if (stepProblems(form, step).length > 0) {
+      setCheckedSteps((s) => (s.includes(step) ? s : [...s, step]));
+      return;
+    }
     setStep((s) => Math.min(s + 1, STEPS.length - 1));
   }
   function goBack() {
@@ -254,14 +338,12 @@ export function ListingWizard({
 
   async function handlePublish() {
     if (!user) return;
-    if (!enoughPhotos) {
-      toast.error(`Add photos of ${listViews(missingPhotoViews)} of your car before you continue.`);
-      setStep(2);
-      return;
-    }
-    if (!form.sellerName.trim() || !form.phone.trim()) {
-      toast.error("Add your name and contact number so buyers can reach you.");
-      setStep(3);
+    // Everything is required: go back to the first step with gaps.
+    const incomplete = STEPS.findIndex((_, i) => stepProblems(form, i).length > 0);
+    if (incomplete !== -1) {
+      setCheckedSteps((s) => (s.includes(incomplete) ? s : [...s, incomplete]));
+      setStep(incomplete);
+      toast.error("Some details are missing. Fill in the highlighted fields to continue.");
       return;
     }
     setSubmitting(true);
@@ -270,21 +352,22 @@ export function ListingWizard({
       make: form.make,
       model: form.model,
       variant: form.variant,
-      year: Number(form.year) || new Date().getFullYear(),
-      price: Number(form.price) || 0,
-      mileage: Number(form.mileage) || 0,
-      province: (form.province || "Gauteng") as Province,
-      town: form.town || "—",
-      bodyType: (form.bodyType || "Sedan") as BodyType,
-      transmission: (form.transmission || "Manual") as Transmission,
-      fuelType: (form.fuelType || "Petrol") as FuelType,
-      condition: (form.condition || "Used") as Condition,
-      previousOwners: Number(form.previousOwners) || 0,
-      serviceHistory: (form.serviceHistory || "Partial Service History") as ServiceHistory,
-      accidentHistory: (form.accidentHistory || "No Accident History") as AccidentHistory,
-      colour: form.colour || "White",
+      // All checked by stepProblems above.
+      year: Number(form.year),
+      price: Number(form.price),
+      mileage: Number(form.mileage),
+      province: form.province as Province,
+      town: form.town.trim(),
+      bodyType: form.bodyType as BodyType,
+      transmission: form.transmission as Transmission,
+      fuelType: form.fuelType as FuelType,
+      condition: form.condition as Condition,
+      previousOwners: Number(form.previousOwners),
+      serviceHistory: form.serviceHistory as ServiceHistory,
+      accidentHistory: form.accidentHistory as AccidentHistory,
+      colour: form.colour,
       features: form.features,
-      description: form.description,
+      description: form.description.trim(),
       ...fromPhotos(form.photos, form.coverUrl),
       sellerName: form.sellerName.trim(),
       phone: form.phone.trim(),
@@ -417,7 +500,7 @@ export function ListingWizard({
             <div className="flex flex-col gap-1.5">
               <Label>Make</Label>
               <Select value={form.make} onValueChange={(v) => set("make", v ?? "")}>
-                <SelectTrigger className="w-full">
+                <SelectTrigger className="w-full" aria-invalid={invalid("make")}>
                   <SelectValue>{(v: string | null) => v || "Select make"}</SelectValue>
                 </SelectTrigger>
                 <SelectContent>
@@ -431,12 +514,12 @@ export function ListingWizard({
             </div>
             <div className="flex flex-col gap-1.5">
               <Label>Model</Label>
-              <Input value={form.model} onChange={(e) => set("model", e.target.value)} placeholder="e.g. Polo" />
+              <Input value={form.model} aria-invalid={invalid("model")} onChange={(e) => set("model", e.target.value)} placeholder="e.g. Polo" />
             </div>
             <div className="flex flex-col gap-1.5">
               <Label>Variant</Label>
               <Input
-                value={form.variant}
+                value={form.variant} aria-invalid={invalid("variant")}
                 onChange={(e) => set("variant", e.target.value)}
                 placeholder="e.g. 1.4 Trendline"
               />
@@ -445,7 +528,7 @@ export function ListingWizard({
               <Label>Year</Label>
               <Input
                 type="number"
-                value={form.year}
+                value={form.year} aria-invalid={invalid("year")}
                 onChange={(e) => set("year", e.target.value)}
                 placeholder="e.g. 2021"
               />
@@ -454,7 +537,7 @@ export function ListingWizard({
               <Label>Price (R)</Label>
               <Input
                 type="number"
-                value={form.price}
+                value={form.price} aria-invalid={invalid("price")}
                 onChange={(e) => set("price", e.target.value)}
                 placeholder="e.g. 219900"
               />
@@ -463,7 +546,7 @@ export function ListingWizard({
               <Label>Mileage (km)</Label>
               <Input
                 type="number"
-                value={form.mileage}
+                value={form.mileage} aria-invalid={invalid("mileage")}
                 onChange={(e) => set("mileage", e.target.value)}
                 placeholder="e.g. 65000"
               />
@@ -471,7 +554,7 @@ export function ListingWizard({
             <div className="flex flex-col gap-1.5">
               <Label>Body Type</Label>
               <Select value={form.bodyType} onValueChange={(v) => set("bodyType", v as BodyType)}>
-                <SelectTrigger className="w-full">
+                <SelectTrigger className="w-full" aria-invalid={invalid("bodyType")}>
                   <SelectValue>{(v: string | null) => v || "Select body type"}</SelectValue>
                 </SelectTrigger>
                 <SelectContent>
@@ -486,7 +569,7 @@ export function ListingWizard({
             <div className="flex flex-col gap-1.5">
               <Label>Condition</Label>
               <Select value={form.condition} onValueChange={(v) => set("condition", v as Condition)}>
-                <SelectTrigger className="w-full">
+                <SelectTrigger className="w-full" aria-invalid={invalid("condition")}>
                   <SelectValue>{(v: string | null) => v || "Select condition"}</SelectValue>
                 </SelectTrigger>
                 <SelectContent>
@@ -501,7 +584,7 @@ export function ListingWizard({
             <div className="flex flex-col gap-1.5">
               <Label>Transmission</Label>
               <Select value={form.transmission} onValueChange={(v) => set("transmission", v as Transmission)}>
-                <SelectTrigger className="w-full">
+                <SelectTrigger className="w-full" aria-invalid={invalid("transmission")}>
                   <SelectValue>{(v: string | null) => v || "Select transmission"}</SelectValue>
                 </SelectTrigger>
                 <SelectContent>
@@ -516,7 +599,7 @@ export function ListingWizard({
             <div className="flex flex-col gap-1.5">
               <Label>Fuel Type</Label>
               <Select value={form.fuelType} onValueChange={(v) => set("fuelType", v as FuelType)}>
-                <SelectTrigger className="w-full">
+                <SelectTrigger className="w-full" aria-invalid={invalid("fuelType")}>
                   <SelectValue>{(v: string | null) => v || "Select fuel type"}</SelectValue>
                 </SelectTrigger>
                 <SelectContent>
@@ -531,7 +614,7 @@ export function ListingWizard({
             <div className="flex flex-col gap-1.5">
               <Label>Province</Label>
               <Select value={form.province} onValueChange={(v) => set("province", v as Province)}>
-                <SelectTrigger className="w-full">
+                <SelectTrigger className="w-full" aria-invalid={invalid("province")}>
                   <SelectValue>{(v: string | null) => v || "Select province"}</SelectValue>
                 </SelectTrigger>
                 <SelectContent>
@@ -545,7 +628,7 @@ export function ListingWizard({
             </div>
             <div className="flex flex-col gap-1.5">
               <Label>Town / Suburb</Label>
-              <Input value={form.town} onChange={(e) => set("town", e.target.value)} placeholder="e.g. Sandton" />
+              <Input value={form.town} aria-invalid={invalid("town")} onChange={(e) => set("town", e.target.value)} placeholder="e.g. Sandton" />
             </div>
           </div>
         )}
@@ -557,7 +640,7 @@ export function ListingWizard({
                 <Label>Previous Owners</Label>
                 <Input
                   type="number"
-                  value={form.previousOwners}
+                  value={form.previousOwners} aria-invalid={invalid("previousOwners")}
                   onChange={(e) => set("previousOwners", e.target.value)}
                   placeholder="e.g. 1"
                 />
@@ -565,7 +648,7 @@ export function ListingWizard({
               <div className="flex flex-col gap-1.5">
                 <Label>Colour</Label>
                 <Select value={form.colour} onValueChange={(v) => set("colour", v ?? "")}>
-                  <SelectTrigger className="w-full">
+                  <SelectTrigger className="w-full" aria-invalid={invalid("colour")}>
                     <SelectValue>{(v: string | null) => v || "Select colour"}</SelectValue>
                   </SelectTrigger>
                   <SelectContent>
@@ -580,7 +663,7 @@ export function ListingWizard({
               <div className="flex flex-col gap-1.5">
                 <Label>Service History</Label>
                 <Select value={form.serviceHistory} onValueChange={(v) => set("serviceHistory", v as ServiceHistory)}>
-                  <SelectTrigger className="w-full">
+                  <SelectTrigger className="w-full" aria-invalid={invalid("serviceHistory")}>
                     <SelectValue>{(v: string | null) => v || "Select service history"}</SelectValue>
                   </SelectTrigger>
                   <SelectContent>
@@ -595,7 +678,7 @@ export function ListingWizard({
               <div className="flex flex-col gap-1.5">
                 <Label>Accident History</Label>
                 <Select value={form.accidentHistory} onValueChange={(v) => set("accidentHistory", v as AccidentHistory)}>
-                  <SelectTrigger className="w-full">
+                  <SelectTrigger className="w-full" aria-invalid={invalid("accidentHistory")}>
                     <SelectValue>{(v: string | null) => v || "Select accident history"}</SelectValue>
                   </SelectTrigger>
                   <SelectContent>
@@ -611,6 +694,9 @@ export function ListingWizard({
 
             <div>
               <Label>Vehicle Features</Label>
+              <p className={invalid("features") ? "mt-1 text-xs text-destructive" : "mt-1 text-xs text-muted-foreground"}>
+                Tick everything your car has (at least one).
+              </p>
               <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3">
                 {VEHICLE_FEATURES.map((feature) => (
                   <label key={feature} className="flex items-center gap-2 text-sm">
@@ -645,7 +731,7 @@ export function ListingWizard({
               <Label>Description</Label>
               <Textarea
                 rows={8}
-                value={form.description}
+                value={form.description} aria-invalid={invalid("description")}
                 onChange={(e) => set("description", e.target.value)}
                 placeholder="Describe your vehicle's condition, history, and any extras..."
               />
@@ -660,7 +746,7 @@ export function ListingWizard({
                   <Label htmlFor="seller-name">Your name</Label>
                   <Input
                     id="seller-name"
-                    value={form.sellerName}
+                    value={form.sellerName} aria-invalid={invalid("sellerName")}
                     onChange={(e) => set("sellerName", e.target.value)}
                     placeholder="e.g. Thandi Nkosi"
                     maxLength={80}
@@ -671,7 +757,7 @@ export function ListingWizard({
                   <Input
                     id="seller-phone"
                     type="tel"
-                    value={form.phone}
+                    value={form.phone} aria-invalid={invalid("phone")}
                     onChange={(e) => set("phone", e.target.value)}
                     placeholder="e.g. 082 123 4567"
                     maxLength={30}
@@ -738,6 +824,13 @@ export function ListingWizard({
         )}
       </div>
 
+      {currentProblems.length > 0 && (
+        <div role="alert" className="mt-4 rounded-xl border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive">
+          <p className="font-medium">Please complete this step before you continue:</p>
+          <p className="mt-0.5">{currentProblems.join(" · ")}</p>
+        </div>
+      )}
+
       <div className="mt-6 flex justify-between">
         <Button
           variant="outline"
@@ -763,7 +856,6 @@ export function ListingWizard({
           {step < STEPS.length - 1 ? (
             <Button
               onClick={goNext}
-              disabled={(step === 0 && !canContinueStep0) || (step === 2 && !enoughPhotos)}
               className="rounded-full bg-foreground text-background hover:opacity-90"
             >
               Next
