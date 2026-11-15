@@ -18,6 +18,7 @@ import { VehicleMedia } from "@/components/vehicle-media";
 import { DeleteAccountSection } from "@/components/delete-account-dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { track } from "@/lib/analytics";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -57,6 +58,7 @@ function PaymentOutcomeToast({ onPaid }: { onPaid: () => void }) {
     if (!outcome || shown.current) return;
     shown.current = true;
     if (outcome === "success") {
+      track("payment_completed");
       toast.success("Payment received! We're reviewing your listing and will email you soon.");
       onPaid();
     } else if (outcome === "pending") {

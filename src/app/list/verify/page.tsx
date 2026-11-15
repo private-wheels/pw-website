@@ -27,6 +27,7 @@ import { fetchListingsByUser } from "@/lib/store/listings";
 import { PaymentError, goToCheckout } from "@/lib/store/payments";
 import { HelpCallout } from "@/components/help-callout";
 import { Button } from "@/components/ui/button";
+import { track } from "@/lib/analytics";
 
 export default function VerifyPage() {
   return (
@@ -155,9 +156,11 @@ function Verify() {
       }
       const outcome = await launchSmileId(session);
       if (outcome.type === "submitted") {
+        track("verification_started");
         await verificationSubmitted(session.attemptId, outcome.jobId);
         setNow(Date.now());
-        await refresh();
+        const latest = await refresh();
+        if (latest) track("verification_result", { status: latest.status });
       } else if (outcome.type === "failed") {
         setError(`${outcome.message} Please try again.`);
       }

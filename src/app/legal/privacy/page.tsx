@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { CookieSettingsButton } from "@/components/cookie-settings-button";
 import {
   BusinessContact,
   LegalDocument,
@@ -239,6 +240,13 @@ export default function PrivacyPolicyPage() {
             </tr>
             <tr>
               <td>
+                <strong>Google</strong>
+              </td>
+              <td>Website analytics (Google Analytics), only if you allow analytics cookies</td>
+              <td>How you use the site: pages viewed, device and browser type, approximate location, and an analytics cookie ID</td>
+            </tr>
+            <tr>
+              <td>
                 <strong>Vercel</strong>
               </td>
               <td>Hosting the website</td>
@@ -414,9 +422,12 @@ export default function PrivacyPolicyPage() {
 
       <LegalSection id="cookies" title="8. Cookies">
         <p>
-          We only use cookies that are strictly necessary for the site to work. We
-          don&apos;t use advertising or tracking cookies, so we don&apos;t show a cookie
-          banner.
+          We use two kinds of cookies: ones that are strictly necessary for the site to
+          work, which are always on, and Google Analytics cookies, which we only use if you
+          allow them. We don&apos;t use advertising cookies.
+        </p>
+        <p>
+          <strong>Strictly necessary:</strong>
         </p>
         <ul>
           <li>
@@ -430,9 +441,24 @@ export default function PrivacyPolicyPage() {
           </li>
         </ul>
         <p>
-          If we ever add analytics or other non-essential cookies, we&apos;ll update this
-          policy and ask for your consent first.
+          <strong>Analytics (only with your consent):</strong>
         </p>
+        <ul>
+          <li>
+            <strong>Google Analytics cookies</strong> (named <code>_ga</code> and{" "}
+            <code>_ga_…</code>), set by Google to count visits and see how people use the
+            site, such as which pages they view and where they drop off when listing a
+            car. They last up to two years. We use this to improve Private Wheels, not for
+            advertising, and we don&apos;t send Google your name, email address or phone
+            number.
+          </li>
+        </ul>
+        <p>
+          When you first visit, a banner asks whether to allow analytics. Nothing from
+          Google Analytics loads until you choose &ldquo;Allow analytics&rdquo;. Your choice
+          is stored in your browser, and you can change it at any time:
+        </p>
+        <CookieSettingsButton />
       </LegalSection>
 
       <LegalSection id="marketing" title="9. Direct marketing">

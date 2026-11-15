@@ -8,6 +8,7 @@ import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteChrome } from "@/components/site-chrome";
 import { Toaster } from "@/components/ui/sonner";
+import { GoogleTag } from "@/components/google-tag";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -49,6 +50,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
             <Toaster />
           </ListingsProvider>
         </AuthProvider>
+        <GoogleTag />
       </body>
     </html>
   );

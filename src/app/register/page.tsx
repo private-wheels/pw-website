@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { track } from "@/lib/analytics";
 
 /**
  * Where new sellers land once signed in (including from the confirmation
@@ -58,6 +59,7 @@ export default function RegisterPage() {
     try {
       const token = await captcha.getToken();
       const { needsConfirmation } = await register(email, password, firstName, WELCOME_PATH, token);
+      track("sign_up");
       if (needsConfirmation) {
         setConfirmationSentTo(email.trim());
         setSubmitting(false);

@@ -41,6 +41,7 @@ import { Separator } from "@/components/ui/separator";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { track } from "@/lib/analytics";
 import {
   Dialog,
   DialogClose,
@@ -392,7 +393,10 @@ export function VehicleDetailClient({ id }: { id: string }) {
                 <div className="flex flex-col gap-2">
                   <Button
                     className="h-12 rounded-full bg-foreground text-background hover:bg-foreground/90"
-                    onClick={() => setNumberRevealed(true)}
+                    onClick={() => {
+                      setNumberRevealed(true);
+                      track("seller_number_revealed");
+                    }}
                   >
                     <Phone className="h-4 w-4" />
                     {numberRevealed ? listing.phone : "Click to Reveal Number"}
