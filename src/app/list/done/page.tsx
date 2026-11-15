@@ -3,7 +3,7 @@
 import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { CheckCircle2, Clock, Loader2, MailCheck, XCircle } from "lucide-react";
+import { CheckCircle2, Clock, Loader2, MailCheck, Plus, XCircle } from "lucide-react";
 import { useAuth } from "@/context/auth-context";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import { PaymentError, goToCheckout } from "@/lib/store/payments";
@@ -114,6 +114,22 @@ function Done() {
         </Button>
       )}
       {error && <p className="text-sm text-destructive">{error}</p>}
+
+      {(paid || pending) && (
+        <div className="mt-2 flex flex-col items-center gap-1.5">
+          <Button
+            size="lg"
+            className="rounded-full bg-primary hover:bg-primary/90"
+            render={
+              <Link href="/list/new">
+                <Plus className="h-4 w-4" />
+                List another car
+              </Link>
+            }
+          />
+          <p className="text-xs text-muted-foreground">Each car is its own listing, with its own listing fee.</p>
+        </div>
+      )}
 
       <Link href="/list" className="text-sm text-muted-foreground underline underline-offset-2">
         Back to Private Wheels
