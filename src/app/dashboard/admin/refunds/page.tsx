@@ -20,12 +20,12 @@ const SCENARIOS: { situation: string; refund: "Yes" | "No" | "Usually"; how: str
     how: "Reject it with a reason like “Cancelled at your request” and leave the refund ticked.",
   },
   {
-    situation: "A founding seller (paid before launch) asks to cancel before launch day, even if approved",
-    refund: "Yes",
-    how: "Take it down from the listing page with the refund ticked. Founding sellers were promised this.",
+    situation: "A founding seller asks to cancel after approval, while waiting for launch day",
+    refund: "No",
+    how: "Approved means the service was delivered, before launch too. They can delete the listing themselves. Explain kindly if they ask.",
   },
   {
-    situation: "The listing was live and the seller sold the car or changed their mind",
+    situation: "The listing was approved and the seller sold the car or changed their mind",
     refund: "No",
     how: "The service was delivered. They can mark it sold or delete it themselves. Explain kindly if they ask.",
   },
@@ -54,9 +54,9 @@ export default async function RefundGuidePage() {
       <div>
         <h2 className="text-lg font-semibold">When to refund the listing fee</h2>
         <p className="mt-1 text-sm text-muted-foreground">
-          The short version: <strong>refund if the listing never went live</strong>, or if it&apos;s a founding
-          seller cancelling before launch. <strong>Don&apos;t refund once a listing has been live</strong>, unless
-          it was charged in error or it&apos;s our fault. Refunds are always the full amount. We don&apos;t do partial refunds.
+          The short version: <strong>refund if the listing hasn&apos;t been approved yet</strong> (rejected, or
+          cancelled before approval). <strong>Don&apos;t refund once a listing is approved</strong>, live or waiting
+          for launch day, founding sellers included, unless it was charged in error or it&apos;s our fault. Refunds are always the full amount. We don&apos;t do partial refunds.
         </p>
       </div>
 

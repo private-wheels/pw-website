@@ -7,7 +7,7 @@
  */
 
 /** Shown at the top of every policy. Bump it whenever any policy changes. */
-export const LEGAL_LAST_UPDATED = "[EFFECTIVE DATE]";
+export const LEGAL_LAST_UPDATED = "15 November 2026";
 
 export const BUSINESS = {
   legalName: "PRIVATEWHEELS (PTY) LTD",

@@ -111,7 +111,9 @@ export default function TermsOfUsePage() {
           </li>
           <li>
             <strong>Founding sellers:</strong> listings paid for before our public launch
-            cost {LISTING_FEE.founding} instead. The founding price ends on launch day.
+            cost {LISTING_FEE.founding} instead. The founding price ends on launch day. The
+            same Refund Policy applies: refundable until your listing is approved, not
+            after.
           </li>
           <li>
             From time to time we may offer vouchers or promotional codes (for example, a free
