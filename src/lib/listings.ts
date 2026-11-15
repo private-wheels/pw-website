@@ -43,7 +43,8 @@ export function rowToVehicle(row: ListingRow): Vehicle {
     features: row.features,
     description: row.description,
     images: row.images,
-    photoViews: row.photo_views.filter(isPhotoView),
+    // Missing only if the photo_views migration hasn't run yet.
+    photoViews: (row.photo_views ?? []).filter(isPhotoView),
     status: row.status as ListingStatus,
     reviewNote: row.review_note,
     sellerId: row.seller_id ?? "",
