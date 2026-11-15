@@ -106,6 +106,17 @@ export default function PrivacyPolicyPage() {
             </tr>
             <tr>
               <td>
+                <strong>Enquiries to sellers:</strong> your name, email address, phone number
+                (if you add it) and message, when you contact a seller from a listing
+              </td>
+              <td>
+                Emailing your message to that seller, who replies to you directly, and sending
+                you a copy
+              </td>
+              <td>Your consent, given when you send the enquiry (s11(1)(a))</td>
+            </tr>
+            <tr>
+              <td>
                 <strong>Listing details and photos:</strong> make, model, year, mileage,
                 price, condition, location, description and photos of the vehicle
               </td>
@@ -280,6 +291,10 @@ export default function PrivacyPolicyPage() {
           <li>
             with buyers, through your public listing and any contact details you choose to
             show on it;
+          </li>
+          <li>
+            with a seller, when you send them an enquiry: your name, email address, phone
+            number (if given) and message;
           </li>
           <li>
             with our professional advisers (such as attorneys and accountants), who are

@@ -4,6 +4,7 @@ import { CalendarClock, Camera, CreditCard, ShieldCheck } from "lucide-react";
 import { FOUNDING_FEE_CENTS, LISTING_FEE_CENTS, formatFee } from "@/lib/payments";
 import { isFoundingPriceActive, isPreLaunch } from "@/lib/site";
 import { HelpCallout } from "@/components/help-callout";
+import { ListSignInNote } from "@/components/list-account-link";
 import { SiteContainer } from "@/components/site-container";
 import { Button } from "@/components/ui/button";
 
@@ -64,6 +65,7 @@ export default function ListYourCarPage() {
               </>
             )}
           </p>
+          <ListSignInNote />
         </div>
       </div>
 

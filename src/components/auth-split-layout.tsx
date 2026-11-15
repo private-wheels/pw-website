@@ -29,19 +29,31 @@ export function AuthSplitLayout({
             South Africa&apos;s trusted private vehicle marketplace.
           </h2>
           <p className="mt-3 max-w-sm text-muted-foreground">
-            Connecting buyers and verified private sellers with precision and transparency.
+            Connecting buyers and verified private sellers with precision and
+            transparency.
           </p>
 
-          <div className="mt-8 flex gap-8">
-            <div>
-              <p className="text-2xl font-semibold tracking-tight">{listings.length}+</p>
-              <p className="text-xs text-muted-foreground uppercase">Vehicles</p>
+          {/* Hidden until there's something to count. */}
+          {listings.length > 0 && (
+            <div className="mt-8 flex gap-8">
+              <div>
+                <p className="text-2xl font-semibold tracking-tight">
+                  {listings.length}+
+                </p>
+                <p className="text-xs text-muted-foreground uppercase">
+                  Vehicles
+                </p>
+              </div>
+              <div>
+                <p className="text-2xl font-semibold tracking-tight">
+                  {sellerCount}+
+                </p>
+                <p className="text-xs text-muted-foreground uppercase">
+                  Sellers
+                </p>
+              </div>
             </div>
-            <div>
-              <p className="text-2xl font-semibold tracking-tight">{sellerCount}+</p>
-              <p className="text-xs text-muted-foreground uppercase">Sellers</p>
-            </div>
-          </div>
+          )}
         </div>
 
         <p className="text-xs text-muted-foreground">
@@ -54,9 +66,13 @@ export function AuthSplitLayout({
           <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
           <p className="mt-1 text-sm text-muted-foreground">{subtitle}</p>
 
-          <div className="shadow-capsule mt-8 rounded-2xl bg-card p-6">{children}</div>
+          <div className="shadow-capsule mt-8 rounded-2xl bg-card p-6">
+            {children}
+          </div>
 
-          <div className="mt-6 text-center text-sm text-muted-foreground">{footer}</div>
+          <div className="mt-6 text-center text-sm text-muted-foreground">
+            {footer}
+          </div>
         </div>
       </div>
     </div>

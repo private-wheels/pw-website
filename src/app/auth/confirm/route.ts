@@ -45,7 +45,8 @@ function isSignUp(type: EmailOtpType | null, code: string | null): boolean {
  * verify page sends admins and already-verified sellers straight on.
  */
 function throughVerify(next: string): string {
-  if (next.startsWith("/list/")) return next;
+  // The /list pages and the password reset page stay where they are.
+  if (next.startsWith("/list/") || next.startsWith("/login/")) return next;
   return `/list/verify?next=${encodeURIComponent(next)}`;
 }
 

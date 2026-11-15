@@ -20,7 +20,7 @@ function friendlyMessage(error: SupabaseAuthError): string {
     case "email_exists":
       return "An account with this email already exists.";
     case "captcha_failed":
-      return "The security check expired. Please press the button again.";
+      return "The security check didn't go through. Please try again.";
     case "anonymous_provider_disabled":
       return "Starting a listing without an account isn't switched on yet. Please register first.";
     case "weak_password":
@@ -96,6 +96,23 @@ export async function linkEmail(email: string, next: string): Promise<void> {
   );
   if (error) throw new AuthError(friendlyMessage(error));
 }
+
+/**
+ * Emails a password reset link. Supabase says nothing about whether the
+ * address has an account (so it can't be used to look accounts up); the
+ * link signs them in via /auth/confirm and lands on the new-password page.
+ */
+export async function requestPasswordReset(email: string, captchaToken?: string): Promise<void> {
+  const redirectTo = `${window.location.origin}/auth/confirm?next=${encodeURIComponent(RESET_PASSWORD_PATH)}`;
+  const { error } = await getSupabaseBrowserClient().auth.resetPasswordForEmail(email.trim(), {
+    redirectTo,
+    captchaToken,
+  });
+  if (error) throw new AuthError(friendlyMessage(error));
+}
+
+/** Where a password reset link lands. */
+export const RESET_PASSWORD_PATH = "/login/reset-password";
 
 /** Sets a password for the signed-in account (after confirming their email). */
 export async function setPassword(password: string): Promise<void> {
