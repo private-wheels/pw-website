@@ -1,5 +1,6 @@
 import type { FilterState, Vehicle } from "@/lib/types";
 import { parseMakeSelections, vehicleMatchesSelections } from "@/lib/make-model";
+import { makeGroup, modelLabel } from "@/lib/data/constants";
 
 export const EMPTY_FILTERS: FilterState = {
   make: "",
@@ -32,14 +33,15 @@ export function applyFilters(vehicles: Vehicle[], filters: Partial<FilterState>)
 
   return vehicles.filter((v) => {
     if (selections.length > 0 && !vehicleMatchesSelections(v, selections)) return false;
-    if (filters.make && v.make !== filters.make) return false;
+    // "Other" matches every make outside the standard list.
+    if (filters.make && makeGroup(v.make) !== filters.make) return false;
     if (filters.model) {
       // `model` may be a comma-separated list ("Golf,Polo") from the hero search.
       const terms = filters.model
         .split(",")
         .map((s) => s.trim().toLowerCase())
         .filter(Boolean);
-      const model = v.model.toLowerCase();
+      const model = modelLabel(v).toLowerCase();
       if (terms.length > 0 && !terms.some((t) => model.includes(t))) return false;
     }
     if (filters.province && v.province !== filters.province) return false;

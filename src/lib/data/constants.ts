@@ -27,6 +27,34 @@ export const MAKES = [
   "Volvo",
 ] as const;
 
+/**
+ * Makes outside MAKES: sellers pick "Other" and type the make, which is saved
+ * as typed (e.g. "Chery"). Search and filters group all of them under "Other".
+ */
+export const OTHER_MAKE = "Other";
+
+const LISTED_MAKES: readonly string[] = MAKES;
+
+export function isListedMake(make: string): boolean {
+  return LISTED_MAKES.includes(make);
+}
+
+/** A typed make, matched to the standard list where it's on it ("toyota" → "Toyota"). */
+export function canonicalMake(typed: string): string {
+  const clean = typed.trim().replace(/\s+/g, " ");
+  return LISTED_MAKES.find((m) => m.toLowerCase() === clean.toLowerCase()) ?? clean;
+}
+
+/** The make a listing is filed under in search: its own, or "Other". */
+export function makeGroup(make: string): string {
+  return isListedMake(make) ? make : OTHER_MAKE;
+}
+
+/** How a listing's model reads within its make group ("Chery Tiggo 4" under Other). */
+export function modelLabel(vehicle: { make: string; model: string }): string {
+  return isListedMake(vehicle.make) ? vehicle.model : `${vehicle.make} ${vehicle.model}`.trim();
+}
+
 export const PROVINCES: Province[] = [
   "Eastern Cape",
   "Free State",

@@ -8,6 +8,7 @@ import {
   CONDITIONS,
   FUEL_TYPES,
   MAKES,
+  OTHER_MAKE,
   PROVINCES,
   TRANSMISSIONS,
 } from "@/lib/data/constants";
@@ -314,7 +315,7 @@ export function PlpFilterSidebar({
                   <span className="flex-1">All Makes</span>
                   <Count value={c({ make: "" })} />
                 </SelectItem>
-                {MAKES.map((m) => (
+                {[...MAKES, OTHER_MAKE].map((m) => (
                   <SelectItem key={m} value={m}>
                     <span className="flex-1">{m}</span>
                     <Count value={c({ make: m })} />

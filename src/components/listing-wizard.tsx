@@ -32,6 +32,9 @@ import {
   SELLER_CONDITIONS,
   FUEL_TYPES,
   MAKES,
+  OTHER_MAKE,
+  isListedMake,
+  canonicalMake,
   PROVINCES,
   SERVICE_HISTORY_OPTIONS,
   TRANSMISSIONS,
@@ -239,6 +242,9 @@ export function ListingWizard({
   const creating = mode === "create" || finishingDraft;
   const [step, setStep] = useState(0);
   const [form, setForm] = useState<FormState>(() => initialForm(existingListing, user));
+  // "Other" make: the seller types it. On when editing a listing whose make
+  // isn't in the standard list.
+  const [otherMake, setOtherMake] = useState(() => Boolean(form.make) && !isListedMake(form.make));
   const [submitting, setSubmitting] = useState(false);
   // The saved draft this wizard is writing to, once there is one.
   const [draftId, setDraftId] = useState<string | null>(finishingDraft ? existingListing.id : null);
@@ -355,7 +361,7 @@ export function ListingWizard({
     setSubmitting(true);
 
     const payload: NewVehicleInput = {
-      make: form.make,
+      make: canonicalMake(form.make),
       model: form.model,
       variant: form.variant,
       // All checked by stepProblems above.
@@ -507,18 +513,42 @@ export function ListingWizard({
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="flex flex-col gap-1.5">
               <Label>Make</Label>
-              <Select value={form.make} onValueChange={(v) => set("make", v ?? "")}>
-                <SelectTrigger className="w-full" aria-invalid={invalid("make")}>
+              <Select
+                value={otherMake ? OTHER_MAKE : form.make}
+                onValueChange={(v) => {
+                  const choice = v ?? "";
+                  setOtherMake(choice === OTHER_MAKE);
+                  set("make", choice === OTHER_MAKE ? "" : choice);
+                }}
+              >
+                <SelectTrigger className="w-full" aria-invalid={invalid("make") && !otherMake}>
                   <SelectValue>{(v: string | null) => v || "Select make"}</SelectValue>
                 </SelectTrigger>
                 <SelectContent>
-                  {MAKES.map((m) => (
+                  {[...MAKES, OTHER_MAKE].map((m) => (
                     <SelectItem key={m} value={m}>
-                      {m}
+                      {m === OTHER_MAKE ? "Other (type it in)" : m}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
+              {otherMake && (
+                <Input
+                  autoFocus
+                  value={form.make}
+                  aria-invalid={invalid("make")}
+                  onChange={(e) => set("make", e.target.value)}
+                  onBlur={() => {
+                    // A make that's on the list after all goes back to the dropdown.
+                    const make = canonicalMake(form.make);
+                    set("make", make);
+                    if (isListedMake(make)) setOtherMake(false);
+                  }}
+                  placeholder="Type the make, e.g. Chery"
+                  maxLength={60}
+                  aria-label="Car make"
+                />
+              )}
             </div>
             <div className="flex flex-col gap-1.5">
               <Label>Model</Label>

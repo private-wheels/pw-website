@@ -1,3 +1,5 @@
+import { makeGroup, modelLabel } from "@/lib/data/constants";
+
 /**
  * The hero search lets a buyer stack several make/model picks. They ride
  * in one `mm` URL param: selections joined by `,`, and within a selection
@@ -36,9 +38,10 @@ export function vehicleMatchesSelections(
   selections: MakeSelection[],
 ): boolean {
   if (selections.length === 0) return true;
-  const model = vehicle.model.toLowerCase();
+  const model = modelLabel(vehicle).toLowerCase();
   return selections.some((sel) => {
-    if (vehicle.make !== sel.make) return false;
+    // "Other" covers every make outside the standard list.
+    if (makeGroup(vehicle.make) !== sel.make) return false;
     if (sel.models.length === 0) return true;
     return sel.models.some((m) => model.includes(m.toLowerCase()));
   });
