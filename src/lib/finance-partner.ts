@@ -7,7 +7,7 @@ export const FINANCE_PARTNER = {
   name: "Future Car Finance",
   /** Their online application, with our referral codes. */
   applyUrl:
-    "https://torque.seritisolutions.co.za/app/financeapplication?CompanyCode=FUTU&UniqueCode=D0910F67-E876-434D-A6D5-6BE749937482",
+    "https://torque.seritisolutions.co.za/app/financeapplication?CompanyCode=FUTU&UniqueCode=CE5C7CC1-99ED-47DB-AD1A-1371795FBD2D",
   /** Their logo in `public/` (400 × 270, on white). */
   logo: { src: "/partners/future-car-finance.png", width: 400, height: 270 },
 };
