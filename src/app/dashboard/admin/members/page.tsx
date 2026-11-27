@@ -27,14 +27,16 @@ export default async function AdminMembersPage() {
   ]);
 
   const profileById = new Map((profiles ?? []).map((p) => [p.id, p]));
+  // Temporary /list accounts count once they've given an email or created a
+  // listing; their email stays pending until they click the confirmation link.
   const members = (users?.users ?? [])
-    .filter((u) => !u.is_anonymous)
-    .sort((a, b) => b.created_at.localeCompare(a.created_at))
-    .map((u) => {
-      const own = (listings ?? []).filter((l) => l.seller_id === u.id);
+    .map((u) => ({ u, own: (listings ?? []).filter((l) => l.seller_id === u.id) }))
+    .filter(({ u, own }) => !u.is_anonymous || Boolean(u.new_email) || own.length > 0)
+    .sort((a, b) => b.u.created_at.localeCompare(a.u.created_at))
+    .map(({ u, own }) => {
       return {
         id: u.id,
-        email: u.email ?? "—",
+        email: u.email || u.new_email || "",
         confirmed: Boolean(u.email_confirmed_at),
         createdAt: u.created_at,
         lastSignIn: u.last_sign_in_at,
@@ -66,7 +68,7 @@ export default async function AdminMembersPage() {
               <TableRow key={m.id}>
                 <TableCell>
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className="font-medium">{m.profile?.display_name || m.email.split("@")[0]}</span>
+                    <span className="font-medium">{m.profile?.display_name || m.email.split("@")[0] || "Unnamed seller"}</span>
                     {m.profile?.role === "admin" && <Badge>Admin</Badge>}
                     {!m.confirmed && <Badge variant="outline">Email not confirmed</Badge>}
                     {m.profile && m.profile.role !== "admin" && (
@@ -75,9 +77,13 @@ export default async function AdminMembersPage() {
                       </Badge>
                     )}
                   </div>
-                  <a href={`mailto:${m.email}`} className="text-xs text-muted-foreground hover:underline">
-                    {m.email}
-                  </a>
+                  {m.email ? (
+                    <a href={`mailto:${m.email}`} className="text-xs text-muted-foreground hover:underline">
+                      {m.email}
+                    </a>
+                  ) : (
+                    <span className="text-xs text-muted-foreground">No email yet</span>
+                  )}
                 </TableCell>
                 <TableCell>{m.profile?.phone || "—"}</TableCell>
                 <TableCell>

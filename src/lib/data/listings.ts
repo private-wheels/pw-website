@@ -15,17 +15,23 @@ export async function getActiveListings(): Promise<Vehicle[]> {
     return [];
   }
 
-  const { data, error } = await createPublicClient()
-    .from("listings")
-    .select("*")
-    .eq("status", "active")
-    .order("created_at", { ascending: false });
+  const db = createPublicClient();
+  const [{ data, error }, unconfirmed] = await Promise.all([
+    db.from("listings").select("*").eq("status", "active").order("created_at", { ascending: false }),
+    db.rpc("unconfirmed_listing_sellers"),
+  ]);
 
   if (error) {
     console.error("Failed to load listings:", error.message);
     return [];
   }
-  return data.map(rowToVehicle);
+  // If this check fails, leave enquiries open rather than locking every listing.
+  if (unconfirmed.error) console.error("Failed to load unconfirmed sellers:", unconfirmed.error.message);
+  const unconfirmedIds = new Set(unconfirmed.data ?? []);
+  return data.map((row) => ({
+    ...rowToVehicle(row),
+    sellerEmailConfirmed: !row.seller_id || !unconfirmedIds.has(row.seller_id),
+  }));
 }
 
 export async function getActiveListing(id: string): Promise<Vehicle | null> {

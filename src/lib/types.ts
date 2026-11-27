@@ -80,12 +80,17 @@ export interface Vehicle {
   sellerName: string;
   phone: string;
   createdAt: string;
+  /**
+   * False when the seller hasn't confirmed an email address yet, so buyers
+   * can't send an enquiry (only set on the public active listings).
+   */
+  sellerEmailConfirmed?: boolean;
 }
 
 /** What a seller submits from the listing wizard. */
 export type NewVehicleInput = Omit<
   Vehicle,
-  "id" | "sellerId" | "createdAt" | "status" | "originalPrice" | "reviewNote"
+  "id" | "sellerId" | "createdAt" | "status" | "originalPrice" | "reviewNote" | "sellerEmailConfirmed"
 >;
 
 /** The signed-in user: Supabase Auth account + their `profiles` row. */
