@@ -31,6 +31,7 @@ import { getPriceRating, type PriceRating } from "@/lib/filter";
 import { FinanceCalculator } from "@/components/finance-calculator";
 import { FinancePartner } from "@/components/finance-partner";
 import { EnquiryForm } from "@/components/enquiry-form";
+import { EnquireLocked } from "@/components/enquire-locked";
 import { photoViewLabel } from "@/lib/listing-photos";
 import { VehiclePlaceholder } from "@/components/vehicle-placeholder";
 import { VehicleMedia } from "@/components/vehicle-media";
@@ -395,53 +396,57 @@ export function VehicleDetailClient({ id }: { id: string }) {
                     {numberRevealed ? listing.phone : "Click to Reveal Number"}
                   </Button>
 
-                  <Dialog
-                    onOpenChange={(next) => {
-                      if (!next) window.setTimeout(() => setEnquirySent(false), 150);
-                    }}
-                  >
-                    <DialogTrigger
-                      render={
-                        <Button variant="outline" className="h-12 rounded-full">
-                          <Mail className="h-4 w-4" />
-                          Enquire Now
-                        </Button>
-                      }
-                    />
-                    <DialogContent className="sm:max-w-sm">
-                      {enquirySent ? (
-                        <div className="flex flex-col gap-4">
-                          <DialogHeader>
-                            <DialogTitle>Thanks — your enquiry is on its way</DialogTitle>
-                            <DialogDescription>
-                              We&apos;ve emailed your message to {listing.sellerName.split(" ")[0]}, who&apos;ll reply
-                              to you directly. Check your inbox for a copy.
-                            </DialogDescription>
-                          </DialogHeader>
-                          <DialogClose
-                            render={
-                              <Button className="h-12 rounded-full bg-primary hover:bg-primary/90" />
-                            }
-                          >
-                            Done
-                          </DialogClose>
-                        </div>
-                      ) : (
-                        <>
-                          <DialogHeader>
-                            <DialogTitle>
-                              Enquire about {listing.year} {listing.make} {listing.model}
-                            </DialogTitle>
-                            <DialogDescription>
-                              Send {listing.sellerName.split(" ")[0]} a message about this
-                              vehicle.
-                            </DialogDescription>
-                          </DialogHeader>
-                          <EnquiryForm listing={listing} onSent={() => setEnquirySent(true)} />
-                        </>
-                      )}
-                    </DialogContent>
-                  </Dialog>
+                  {listing.sellerEmailConfirmed === false ? (
+                    <EnquireLocked sellerFirstName={listing.sellerName.split(" ")[0]} />
+                  ) : (
+                    <Dialog
+                      onOpenChange={(next) => {
+                        if (!next) window.setTimeout(() => setEnquirySent(false), 150);
+                      }}
+                    >
+                      <DialogTrigger
+                        render={
+                          <Button variant="outline" className="h-12 rounded-full">
+                            <Mail className="h-4 w-4" />
+                            Enquire Now
+                          </Button>
+                        }
+                      />
+                      <DialogContent className="sm:max-w-sm">
+                        {enquirySent ? (
+                          <div className="flex flex-col gap-4">
+                            <DialogHeader>
+                              <DialogTitle>Thanks — your enquiry is on its way</DialogTitle>
+                              <DialogDescription>
+                                We&apos;ve emailed your message to {listing.sellerName.split(" ")[0]}, who&apos;ll reply
+                                to you directly. Check your inbox for a copy.
+                              </DialogDescription>
+                            </DialogHeader>
+                            <DialogClose
+                              render={
+                                <Button className="h-12 rounded-full bg-primary hover:bg-primary/90" />
+                              }
+                            >
+                              Done
+                            </DialogClose>
+                          </div>
+                        ) : (
+                          <>
+                            <DialogHeader>
+                              <DialogTitle>
+                                Enquire about {listing.year} {listing.make} {listing.model}
+                              </DialogTitle>
+                              <DialogDescription>
+                                Send {listing.sellerName.split(" ")[0]} a message about this
+                                vehicle.
+                              </DialogDescription>
+                            </DialogHeader>
+                            <EnquiryForm listing={listing} onSent={() => setEnquirySent(true)} />
+                          </>
+                        )}
+                      </DialogContent>
+                    </Dialog>
+                  )}
                 </div>
               </div>
             </div>

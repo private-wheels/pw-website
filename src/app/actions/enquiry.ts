@@ -58,9 +58,14 @@ export async function sendEnquiry(input: EnquiryInput): Promise<{ ok: true } | {
     db.auth.admin.getUserById(listing.seller_id),
     db.from("profiles").select("first_name").eq("id", listing.seller_id).maybeSingle(),
   ]);
-  const sellerEmail = seller.user?.email || seller.user?.new_email;
+  // Only a confirmed address: an unconfirmed one may be mistyped or not theirs.
+  // The listing page locks "Enquire Now" in that case, so this is a backstop.
+  const sellerEmail = seller.user?.email_confirmed_at ? seller.user.email : null;
   if (!sellerEmail) {
-    return { ok: false, error: "We couldn't reach this seller right now. Please call them instead." };
+    return {
+      ok: false,
+      error: "This seller hasn't confirmed their email address yet, so we can't pass on messages. Please call them instead.",
+    };
   }
 
   const data = {

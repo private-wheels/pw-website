@@ -49,6 +49,8 @@ export default async function AdminListingPage({ params }: { params: Promise<{ i
     row.reviewed_by ? db.auth.admin.getUserById(row.reviewed_by) : Promise.resolve(null),
   ]);
   const seller = sellerResult?.data.user ?? null;
+  // A /list seller's email stays pending until they click the confirmation link.
+  const sellerEmail = seller?.email || seller?.new_email || null;
   const reviewer = reviewerResult?.data.user ?? null;
 
   const vehicle = rowToVehicle(row);
@@ -189,7 +191,12 @@ export default async function AdminListingPage({ params }: { params: Promise<{ i
               <div>
                 <dt className="text-xs text-muted-foreground uppercase">Account email</dt>
                 <dd className="font-medium break-all">
-                  {seller?.email ? <a href={`mailto:${seller.email}`}>{seller.email}</a> : "—"}
+                  {sellerEmail ? <a href={`mailto:${sellerEmail}`}>{sellerEmail}</a> : "—"}
+                  {sellerEmail && !seller?.email_confirmed_at && (
+                    <Badge variant="outline" className="ml-2 align-middle">
+                      Not confirmed
+                    </Badge>
+                  )}
                 </dd>
               </div>
               <div>
