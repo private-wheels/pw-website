@@ -24,9 +24,12 @@ const RATING_LABEL: Record<Exclude<PriceRating, null>, string> = {
 export function VehicleListCard({
   vehicle,
   priceRating = null,
+  eager = false,
 }: {
   vehicle: Vehicle;
   priceRating?: PriceRating;
+  /** Load the main photo straight away (for the cards visible as the page opens). */
+  eager?: boolean;
 }) {
   const [copied, setCopied] = useState(false);
 
@@ -63,6 +66,7 @@ export function VehicleListCard({
           <VehicleMedia
             vehicle={vehicle}
             sizes="(min-width: 1024px) 440px, (min-width: 640px) 380px, 100vw"
+            eager={eager}
           />
 
           <span className="absolute bottom-3 left-3 flex items-center gap-1 rounded-full bg-black/55 px-2.5 py-1 text-xs font-medium text-white">
