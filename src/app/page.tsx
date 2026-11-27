@@ -38,7 +38,7 @@ export default async function HomePage() {
                 src="/banner-hero-1.jpg"
                 alt=""
                 fill
-                priority
+                preload
                 sizes="(min-width: 1400px) 1400px, 100vw"
                 className="object-cover"
               />

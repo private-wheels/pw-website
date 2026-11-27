@@ -58,7 +58,7 @@ export default function SellPage() {
                 src="/banner-sell-1.jpg"
                 alt=""
                 fill
-                priority
+                preload
                 sizes="(min-width: 1400px) 1400px, 100vw"
                 className="object-cover"
               />

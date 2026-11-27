@@ -130,6 +130,9 @@ export function VehicleDetailClient({ id }: { id: string }) {
     listing.images.length > 0
       ? listing.images.map((_, i) => i)
       : Array.from({ length: 5 }, (_, i) => i);
+  const galleryLayers = [activeImage - 1, activeImage, activeImage + 1].filter(
+    (i) => i >= 0 && i < listing.images.length,
+  );
 
   function scrollThumbs(amount: number) {
     thumbRailRef.current?.scrollBy({ left: amount, behavior: "smooth" });
@@ -170,12 +173,27 @@ export function VehicleDetailClient({ id }: { id: string }) {
           <div>
             <div className="relative aspect-[16/10] overflow-hidden rounded-2xl">
               {listing.images.length > 0 ? (
-                <VehicleMedia
-                  vehicle={listing}
-                  index={activeImage}
-                  sizes="(min-width: 1024px) 900px, 100vw"
-                  priority
-                />
+                // The active photo plus its neighbours, stacked: the hidden
+                // ones load in the background, so the next/previous photo is
+                // already there when the buyer taps through the gallery.
+                galleryLayers.map((i) => (
+                  <div
+                    key={i}
+                    aria-hidden={i !== activeImage}
+                    className={cn(
+                      "absolute inset-0 transition-opacity duration-150",
+                      i === activeImage ? "opacity-100" : "opacity-0",
+                    )}
+                  >
+                    <VehicleMedia
+                      vehicle={listing}
+                      index={i}
+                      sizes="(min-width: 1024px) 900px, 100vw"
+                      preload={i === 0}
+                      eager={i === activeImage}
+                    />
+                  </div>
+                ))
               ) : (
                 <VehiclePlaceholder seed={listing.id} />
               )}
@@ -208,7 +226,7 @@ export function VehicleDetailClient({ id }: { id: string }) {
                     className="relative aspect-[4/3] w-[calc(20%-6.4px)] shrink-0 overflow-hidden rounded-lg"
                   >
                     {listing.images.length > 0 ? (
-                      <VehicleMedia vehicle={listing} index={i} sizes="120px" compact />
+                      <VehicleMedia vehicle={listing} index={i} sizes="(min-width: 1024px) 190px, 20vw" compact />
                     ) : (
                       <VehiclePlaceholder seed={`${listing.id}-${i}`} compact />
                     )}

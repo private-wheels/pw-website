@@ -140,10 +140,11 @@ export function CarsPageClient() {
               </div>
             ) : (
               <div className="flex flex-col gap-5">
-                {sorted.map((v) => (
+                {sorted.map((v, i) => (
                   <VehicleListCard
                     key={v.id}
                     vehicle={v}
+                    eager={i < 2}
                     priceRating={getPriceRating(v, listings)}
                   />
                 ))}

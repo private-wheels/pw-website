@@ -17,6 +17,10 @@ import {
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
+/** Photos processed and uploaded at once. Each one is decoded at full size
+ * in memory first, so a phone choosing 20 photos would otherwise run out. */
+const UPLOAD_CONCURRENCY = 3;
+
 const VIEW_ICONS: Record<RequiredView, LucideIcon> = {
   front: CarFront,
   back: CarFront,
@@ -59,6 +63,25 @@ export function PhotoUploader({
   useEffect(() => {
     latest.current = photos;
   });
+  // Local copies of photos uploaded in this session, shown straight away
+  // instead of waiting for the hosted copy to be resized on first view.
+  const [previews, setPreviews] = useState<Record<string, string>>({});
+  const previewUrls = useRef<string[]>([]);
+  useEffect(() => () => previewUrls.current.forEach((u) => URL.revokeObjectURL(u)), []);
+
+  function thumbnail(photo: ListingPhoto, alt: string) {
+    const local = previews[photo.url];
+    return (
+      <Image
+        src={local ?? photo.url}
+        alt={alt}
+        fill
+        sizes="200px"
+        unoptimized={Boolean(local)}
+        className="object-cover"
+      />
+    );
+  }
 
   const byView = (view: RequiredView) => photos.find((p) => p.view === view);
   const others = photos.filter((p) => p.view === "other");
@@ -94,7 +117,10 @@ export function PhotoUploader({
 
   async function upload(file: File, view: PhotoView): Promise<void> {
     try {
-      const url = await uploadListingPhoto(file, userId);
+      const { url, blob } = await uploadListingPhoto(file, userId);
+      const local = URL.createObjectURL(blob);
+      previewUrls.current.push(local);
+      setPreviews((p) => ({ ...p, [url]: local }));
       // A required slot holds one photo: a newer one replaces it.
       const replaced = view === "other" ? undefined : latest.current.find((p) => p.view === view);
       if (replaced) onRemove(replaced.url);
@@ -128,10 +154,13 @@ export function PhotoUploader({
       toast.error(`Only the first ${batch.length} photos were added. The limit is ${MAX_PHOTOS}.`);
     }
     setUploadingOthers((n) => n + batch.length);
+    const queue = [...batch];
     await Promise.all(
-      batch.map(async (file) => {
-        await upload(file, "other");
-        setUploadingOthers((n) => n - 1);
+      Array.from({ length: Math.min(UPLOAD_CONCURRENCY, queue.length) }, async () => {
+        for (let file = queue.shift(); file; file = queue.shift()) {
+          await upload(file, "other");
+          setUploadingOthers((n) => n - 1);
+        }
       }),
     );
   }
@@ -180,7 +209,7 @@ export function PhotoUploader({
             if (photo) {
               return (
                 <div key={key} className="relative aspect-[4/3] overflow-hidden rounded-lg border bg-muted">
-                  <Image src={photo.url} alt={`${label} photo`} fill sizes="200px" className="object-cover" />
+                  {thumbnail(photo, `${label} photo`)}
                   <span className="absolute top-2 left-2 rounded-full bg-card px-2 py-0.5 text-[11px] font-bold shadow-sm">
                     {label}
                   </span>
@@ -241,7 +270,7 @@ export function PhotoUploader({
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
             {others.map((photo, i) => (
               <div key={photo.url} className="relative aspect-[4/3] overflow-hidden rounded-lg border bg-muted">
-                <Image src={photo.url} alt={`Extra photo ${i + 1}`} fill sizes="200px" className="object-cover" />
+                {thumbnail(photo, `Extra photo ${i + 1}`)}
                 {coverChip(photo)}
                 <button
                   type="button"

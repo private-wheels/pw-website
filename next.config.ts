@@ -11,6 +11,10 @@ const nextConfig: NextConfig = {
     lockDistDir: false,
   },
   images: {
+    // Fewer widths than the default (which goes up to 3840) means fewer
+    // variants of each photo for Vercel to resize on first view, so visitors
+    // hit an already-resized copy more often. 1920 covers a full-width banner.
+    deviceSizes: [640, 828, 1080, 1280, 1600, 1920],
     remotePatterns: supabaseUrl
       ? [new URL(`${supabaseUrl}/storage/v1/object/public/listing-photos/**`)]
       : [],
