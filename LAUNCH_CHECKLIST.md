@@ -119,13 +119,17 @@ Paystack test card: `4084 0840 8408 4081`, any future expiry, CVV `408`.
 ## 6. Launch day
 
 - [x] **Delete the demo listings.** Done 15 Nov 2026, together with every
-      test listing (47 in all) and their uploaded photos. Optionally remove
-      the demo photos in `public/listings/bmw-x1-sdrive18d/` too.
+      test listing (47 in all) and their uploaded photos. The demo
+      photos and seed data were removed from the repo on 27 Nov 2026.
 - [ ] **Vercel: `SITE_LAUNCHED=true`** and redeploy. The marketplace opens,
       approved founding listings go live, and new listings cost R249 (unless
       `FOUNDING_PRICE=on`).
 - [ ] **Check the public site:** home page, `/cars`, a listing page, and
       Sell your car → listing → pay **R249** → review.
+- [ ] **Search engines:** `/robots.txt` blocks everything until launch. After
+      the redeploy, check it now allows crawling and points at
+      `https://www.private-wheels.co.za/sitemap.xml`, then add that sitemap in
+      Google Search Console (Sitemaps).
 - [ ] Tell the founding sellers they're live: Admin → overview → **Send launch emails**
       (shows up once `SITE_LAUNCHED=true`).
 
